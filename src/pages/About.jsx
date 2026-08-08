@@ -1,0 +1,5 @@
+import SectionLabel from '../components/SectionLabel';
+
+export default function About() {
+  return <section className="section page-section"><SectionLabel>01 — ABOUT</SectionLabel><div className="about-content"><div><h1>Engineering with a <span>human</span> perspective.</h1><p>With 7+ years in technology, I specialize in frontend engineering, architecture and technical leadership. My sweet spot is where strong engineering meets thoughtful product experience.</p><p>I enjoy turning ambiguous product requirements into clear technical systems, reusable UI patterns and experiences that are fast, accessible and easy to evolve.</p></div><div><p>I believe good frontend engineering is more than writing UI. It is about making thoughtful trade-offs, creating a healthy developer experience and helping teams ship with confidence.</p><div className="stats"><div><strong>7+</strong><small>Years in tech</small></div><div><strong>10+</strong><small>Engineers led</small></div><div><strong>30%</strong><small>Dev effort reduced</small></div></div></div></div></section>;
+}
