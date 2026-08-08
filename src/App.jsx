@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpRight, Github, Linkedin, Mail, MapPin, Menu, X, ExternalLink } from 'lucide-react';
+import { ArrowUpRight, Mail, MapPin, Menu, X, ExternalLink } from 'lucide-react';
 
 const skills = ['Vue.js', 'React', 'JavaScript', 'TypeScript', 'HTML & CSS', 'Frontend Architecture', 'Performance', 'Accessibility', 'I18n', 'Webpack', 'Git', 'Agile / Scrum'];
 const projects = [
@@ -20,6 +20,6 @@ export default function App() {
       <section className="section skills"><div className="section-label">03 — TOOLKIT</div><div className="skills-wrap"><h2>The tools I use to <span>make things work.</span></h2><div className="skill-list">{skills.map((skill, i) => <span key={skill}><b>0{i+1}</b>{skill}</span>)}</div></div></section>
       <section className="section work" id="work"><div className="section-label">04 — SELECTED WORK</div><div className="work-head"><h2>Ideas, systems,<br/><span>shipped.</span></h2><p>A selection of the problems I've enjoyed solving — from product architecture to developer experience.</p></div><div className="project-grid">{projects.map((p, i) => <article className="project" key={p.title}><div className="project-number">0{i+1}</div><div><div className="time">{p.type}</div><h3>{p.title}</h3><p>{p.text}</p><div className="tags">{p.tags.map(t => <span key={t}>{t}</span>)}</div></div><ExternalLink size={20}/></article>)}</div></section>
       <section className="contact" id="contact"><div className="section-label">05 — CONTACT</div><div className="contact-inner"><div><p className="kicker">HAVE A PROJECT IN MIND?</p><h2>Let's build something<br/><em>worth talking about.</em></h2></div><a className="contact-mail" href="mailto:himanshudigari@gmail.com">himanshudigari@gmail.com <ArrowUpRight/></a></div><div className="contact-meta"><span><MapPin size={16}/> India</span><span>Frontend · Architecture · Leadership</span></div></section>
-    </main><footer><span>© {new Date().getFullYear()} Himanshu Digari</span><div><a href="https://github.com/HimanshuHD" target="_blank" rel="noreferrer"><Github size={18}/></a><a href="https://www.linkedin.com/in/himanshudigari/" target="_blank" rel="noreferrer"><Linkedin size={18}/></a><a href="mailto:himanshudigari@gmail.com"><Mail size={18}/></a></div></footer>
+    </main><footer><span>© {new Date().getFullYear()} Himanshu Digari</span><div><a href="https://github.com/HimanshuHD" target="_blank" rel="noreferrer">GitHub <ExternalLink size={14}/></a><a href="https://www.linkedin.com/in/himanshudigari/" target="_blank" rel="noreferrer">LinkedIn <ExternalLink size={14}/></a><a href="mailto:himanshudigari@gmail.com"><Mail size={18}/></a></div></footer>
   </div>;
 }
