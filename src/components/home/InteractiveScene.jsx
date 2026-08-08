@@ -1,26 +1,13 @@
 import { Canvas } from '@react-three/fiber';
 import { Float, OrbitControls, Sparkles } from '@react-three/drei';
-import { useRef } from 'react';
 import * as THREE from 'three';
 
 function Laptop() {
   return <group position={[0, 0.65, 0]} rotation={[-0.08, -0.15, 0]}>
-    <mesh position={[0, 0, 0]} castShadow>
-      <boxGeometry args={[2.9, 0.12, 1.8]} />
-      <meshStandardMaterial color="#17191b" metalness={0.8} roughness={0.22} />
-    </mesh>
-    <mesh position={[0, 0.86, -0.82]} rotation={[-0.22, 0, 0]} castShadow>
-      <boxGeometry args={[2.7, 1.65, 0.1]} />
-      <meshStandardMaterial color="#101315" metalness={0.7} roughness={0.25} />
-    </mesh>
-    <mesh position={[0, 0.86, -0.755]} rotation={[-0.22, 0, 0]}>
-      <boxGeometry args={[2.42, 1.36, 0.02]} />
-      <meshStandardMaterial color="#8fb82d" emissive="#233000" emissiveIntensity={0.28} roughness={0.35} />
-    </mesh>
-    <mesh position={[0, 0.075, 0.05]}>
-      <boxGeometry args={[1.1, 0.015, 0.62]} />
-      <meshStandardMaterial color="#242729" metalness={0.45} roughness={0.3} />
-    </mesh>
+    <mesh position={[0, 0, 0]} castShadow><boxGeometry args={[2.9, 0.12, 1.8]} /><meshStandardMaterial color="#17191b" metalness={0.8} roughness={0.22} /></mesh>
+    <mesh position={[0, 0.86, -0.82]} rotation={[-0.22, 0, 0]} castShadow><boxGeometry args={[2.7, 1.65, 0.1]} /><meshStandardMaterial color="#101315" metalness={0.7} roughness={0.25} /></mesh>
+    <mesh position={[0, 0.86, -0.755]} rotation={[-0.22, 0, 0]}><boxGeometry args={[2.42, 1.36, 0.02]} /><meshStandardMaterial color="#8fb82d" emissive="#233000" emissiveIntensity={0.28} roughness={0.35} /></mesh>
+    <mesh position={[0, 0.075, 0.05]}><boxGeometry args={[1.1, 0.015, 0.62]} /><meshStandardMaterial color="#242729" metalness={0.45} roughness={0.3} /></mesh>
   </group>;
 }
 
@@ -40,53 +27,24 @@ function Camera() {
   </group>;
 }
 
-function Cube() {
-  const ref = useRef();
-  return <Float speed={2} rotationIntensity={0.7} floatIntensity={0.8}>
-    <mesh ref={ref} position={[2.35, 1.7, 0.25]} rotation={[0.3, 0.4, 0.15]} castShadow>
-      <boxGeometry args={[0.62, 0.62, 0.62]} />
-      <meshStandardMaterial color="#d9ff54" roughness={0.3} metalness={0.15} wireframe />
-    </mesh>
-  </Float>;
-}
-
-function Headphones() {
-  return <group position={[-1.8, 0.35, -0.65]} rotation={[0.15, 0.2, -0.2]}>
-    <torusGeometry args={[0.52, 0.07, 12, 32]} />
-  </group>;
-}
-
 function Desk() {
   return <group>
-    <mesh receiveShadow position={[0, 0.05, 0]} rotation={[-0.015, 0, 0]}>
-      <cylinderGeometry args={[4.1, 4.1, 0.12, 64]} />
-      <meshStandardMaterial color="#101214" metalness={0.5} roughness={0.3} />
-    </mesh>
-    <mesh position={[0, -0.04, 0]}>
-      <torusGeometry args={[4.05, 0.045, 12, 80]} />
-      <meshStandardMaterial color="#d9ff54" emissive="#9bbb28" emissiveIntensity={1.6} />
-    </mesh>
+    <mesh receiveShadow position={[0, 0.05, 0]} rotation={[-0.015, 0, 0]}><cylinderGeometry args={[4.1, 4.1, 0.12, 64]} /><meshStandardMaterial color="#101214" metalness={0.5} roughness={0.3} /></mesh>
+    <mesh position={[0, -0.04, 0]}><torusGeometry args={[4.05, 0.045, 12, 80]} /><meshStandardMaterial color="#d9ff54" emissive="#9bbb28" emissiveIntensity={1.6} /></mesh>
   </group>;
 }
 
 function SceneObjects() {
   return <>
-    <Desk />
-    <Laptop />
-    <Phone />
-    <Camera />
-    <Cube />
+    <Desk /><Laptop /><Phone /><Camera />
+    <Float speed={2} rotationIntensity={0.7} floatIntensity={0.8}>
+      <mesh position={[2.35, 1.7, 0.25]} rotation={[0.3, 0.4, 0.15]} castShadow><boxGeometry args={[0.62, 0.62, 0.62]} /><meshStandardMaterial color="#d9ff54" roughness={0.3} metalness={0.15} wireframe /></mesh>
+    </Float>
     <Float speed={1.5} rotationIntensity={0.25} floatIntensity={0.35}>
-      <mesh position={[-2.9, 1.65, -0.1]} castShadow>
-        <sphereGeometry args={[0.5, 24, 24]} />
-        <meshStandardMaterial color="#d9ff54" metalness={0.15} roughness={0.22} emissive="#405d00" emissiveIntensity={0.3} />
-      </mesh>
+      <mesh position={[-2.9, 1.65, -0.1]} castShadow><sphereGeometry args={[0.5, 24, 24]} /><meshStandardMaterial color="#d9ff54" metalness={0.15} roughness={0.22} emissive="#405d00" emissiveIntensity={0.3} /></mesh>
     </Float>
     <Float speed={1.8} rotationIntensity={0.5} floatIntensity={0.65}>
-      <mesh position={[3.05, 1.55, -0.25]} castShadow>
-        <icosahedronGeometry args={[0.42, 1]} />
-        <meshStandardMaterial color="#24292d" metalness={0.75} roughness={0.18} wireframe />
-      </mesh>
+      <mesh position={[3.05, 1.55, -0.25]} castShadow><icosahedronGeometry args={[0.42, 1]} /><meshStandardMaterial color="#24292d" metalness={0.75} roughness={0.18} wireframe /></mesh>
     </Float>
   </>;
 }
