@@ -1,10 +1,8 @@
-name: Portfolio CI and GitHub Pages
+name: Deploy portfolio to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
-      - 'feature/**'
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -13,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-${{ github.ref }}
+  group: pages-production
   cancel-in-progress: true
 
 jobs:
@@ -28,23 +26,14 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
-      - name: Build Vite app
+      - name: Build production
         run: npm run build
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
-
-  deploy:
-    if: github.ref == 'refs/heads/main'
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Deploy to GitHub Pages
+      - name: Upload production artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./dist
+      - name: Deploy production
         id: deployment
         uses: actions/deploy-pages@v4
