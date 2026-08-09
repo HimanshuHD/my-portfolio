@@ -11,6 +11,7 @@
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-icons": "latest",
     "react-router-dom": "latest",
     "three": "latest",
     "vite": "latest"
