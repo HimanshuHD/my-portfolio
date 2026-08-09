@@ -16,7 +16,7 @@ env:
   PREVIEW_BASE: /my-portfolio/feature-check/
 
 concurrency:
-  group: pages-preview
+  group: pages-preview-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -29,11 +29,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: npm
 
       - name: Build feature branch
         run: |
-          npm install
+          npm ci
           VITE_BASE="$PREVIEW_BASE" npm run build
           mv dist feature-dist
 
@@ -46,11 +47,12 @@ jobs:
       - name: Build current production site
         working-directory: production-source
         run: |
-          npm install
+          npm ci
           VITE_BASE="$PRODUCTION_BASE" npm run build
 
       - name: Combine production and feature preview
         run: |
+          rm -rf site
           mkdir -p site
           cp -R production-source/dist/. site/
           mkdir -p site/feature-check
@@ -69,8 +71,8 @@ jobs:
     needs: build-preview
     runs-on: ubuntu-latest
     environment:
-      name: github-pages
-      url: https://himanshuhd.github.io/my-portfolio/feature-check/
+      name: github-pages-preview
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy feature preview
         id: deployment
