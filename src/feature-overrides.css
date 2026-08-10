@@ -10,7 +10,7 @@
 .hero-scene-layer{right:-1vw;top:2%;width:65%;height:74%;pointer-events:none;z-index:2;overflow:visible}
 .hero-scene-layer .interactive-scene{pointer-events:auto}
 
-/* The 3D scene is now a free-floating background visual — no oval/card container. */
+/* The 3D scene is a free-floating background visual on desktop. */
 .interactive-scene{
   position:relative;
   width:100%;
@@ -61,14 +61,16 @@
   .hero-copy{transform:translateY(-1.5vh)}
 }
 
-@media(max-width:1050px){
+@media(max-width:1050px) and (min-width:851px){
   .hero-scene-layer{right:-2vw;width:67%;height:72%;overflow:visible}
 }
 
+/* Mobile: hide the entire Three.js scene. The portfolio becomes a clean content-first layout. */
 @media(max-width:850px){
   .site>main{padding-top:81px}
-  .hero-scene-layer{width:100%;height:430px;margin:-20px -2vw 0;right:auto;top:auto;pointer-events:none;overflow:visible}
-  .scene-hint{right:18px;top:18px;font-size:10px;padding:10px 12px}
+  .hero-scene-layer{display:none!important}
+  .interactive-scene{display:none!important}
+  .scene-hint{display:none!important}
   .hero-actions{margin-top:30px;margin-bottom:18px}
   .hero-stats{margin:26px auto 0}
   .scroll-down{margin:10px auto 0;padding:8px 18px}
