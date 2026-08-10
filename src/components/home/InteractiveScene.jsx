@@ -3,7 +3,7 @@ import { ContactShadows, OrbitControls, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 
 const accent = '#d9ff54';
-const DESK_HEIGHT = 0.08;
+const DESK_HEIGHT = 0.008;
 const DESK_Y = DESK_HEIGHT / 2;
 const DESK_TOP = DESK_Y + DESK_HEIGHT / 2;
 
@@ -113,10 +113,10 @@ function Phone() {
 function Desk() {
   return (
     <RoundedBox
-      args={[8.2, 0.005, 4.25]}
+      args={[8.2, DESK_HEIGHT, 4.25]}
       radius={0.24}
       smoothness={5}
-      position={[0, 0.09, 0]}
+      position={[0, DESK_Y, 0]}
       receiveShadow
     >
       <meshStandardMaterial
