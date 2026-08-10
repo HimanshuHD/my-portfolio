@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 const accent = '#d9ff54';
 const DESK_HEIGHT = 0.008;
-const DESK_Y = DESK_HEIGHT / 2;
+const DESK_Y = 0;
 const DESK_TOP = DESK_Y + DESK_HEIGHT / 2;
 
 function Laptop() {
@@ -41,7 +41,7 @@ function RubiksCube() {
   const faceOffset = 0.15;
   
   for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) cubies.push({ x, y, z, id: `${x}${y}${z}` });
-  return <group position={[2.35, DESK_TOP, 0.5]} rotation={[0, -0.42, 0]}>{cubies.map(({ x, y, z, id }) => <group key={id} position={[x * cubeScale, y * cubeScale, z * cubeScale]}>
+  return <group position={[2.35, DESK_TOP + 0.48, 0.5]} rotation={[0, -0.42, 0]}>{cubies.map(({ x, y, z, id }) => <group key={id} position={[x * cubeScale, y * cubeScale, z * cubeScale]}>
     <RoundedBox args={[0.285, 0.285, 0.285]} radius={0.035} smoothness={2} castShadow><meshStandardMaterial color="#111315" roughness={0.34} /></RoundedBox>
     {x === 1 && <mesh position={[faceOffset, 0, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[0]} /></mesh>}
     {x === -1 && <mesh position={[-faceOffset, 0, 0]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[3]} /></mesh>}
@@ -114,7 +114,7 @@ function Desk() {
   return (
     <RoundedBox
       args={[8.2, DESK_HEIGHT, 4.25]}
-      radius={0.24}
+      radius={0.02}
       smoothness={5}
       position={[0, DESK_Y, 0]}
       receiveShadow
