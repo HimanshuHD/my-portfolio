@@ -3,7 +3,7 @@ import { ContactShadows, OrbitControls, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 
 const accent = '#d9ff54';
-const DESK_TOP = 0.18;
+const DESK_TOP = 0.27;
 
 function Laptop() {
   const rows = ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
@@ -35,7 +35,7 @@ function RubiksCube() {
   const cubies = [];
   for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) cubies.push({ x, y, z, id: `${x}${y}${z}` });
   return <group position={[2.35, DESK_TOP + 0.48, 0.5]} rotation={[0, -0.42, 0]}>{cubies.map(({ x, y, z, id }) => <group key={id} position={[x * 0.31, y * 0.31, z * 0.31]}>
-    <RoundedBox args={[0.185, 0.185, 0.185]} radius={0.035} smoothness={2} castShadow><meshStandardMaterial color="#111315" roughness={0.34} /></RoundedBox>
+    <RoundedBox args={[0.285, 0.285, 0.285]} radius={0.035} smoothness={2} castShadow><meshStandardMaterial color="#111315" roughness={0.34} /></RoundedBox>
     {x === 1 && <mesh position={[0.146, 0, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[0.22, 0.22]} /><meshStandardMaterial color={colors[0]} /></mesh>}
     {x === -1 && <mesh position={[-0.146, 0, 0]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[0.22, 0.22]} /><meshStandardMaterial color={colors[3]} /></mesh>}
     {y === 1 && <mesh position={[0, 0.146, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[0.22, 0.22]} /><meshStandardMaterial color={colors[2]} /></mesh>}
