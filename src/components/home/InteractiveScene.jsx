@@ -36,7 +36,7 @@ function RubiksCube() {
   const cubeScale = 0.23;
   const cubieSize = 0.215;
   const faceSize = 0.165;
-  const faceOffset = 0.11;
+  const faceOffset = 0.15;
   
   for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) cubies.push({ x, y, z, id: `${x}${y}${z}` });
   return <group position={[2.35, DESK_TOP + 0.48, 0.5]} rotation={[0, -0.42, 0]}>{cubies.map(({ x, y, z, id }) => <group key={id} position={[x * cubeScale, y * cubeScale, z * cubeScale]}>
