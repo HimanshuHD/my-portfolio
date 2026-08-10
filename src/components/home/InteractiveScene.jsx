@@ -3,7 +3,7 @@ import { ContactShadows, OrbitControls, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 
 const accent = '#d9ff54';
-const DESK_TOP = 0.72;
+const DESK_TOP = 0.48;
 
 function Laptop() {
   const rows = ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
@@ -111,7 +111,7 @@ function Phone() {
 function Desk() {
   return (
     <RoundedBox
-      args={[8.2, 0.08, 4.25]}
+      args={[8.2, 0.02, 4.25]}
       radius={0.24}
       smoothness={5}
       position={[0, 0.09, 0]}
