@@ -34,8 +34,8 @@ function RubiksCube() {
   const colors = ['#e12d2d', '#f4f0d7', '#f0d329', '#198b49', '#1769aa', '#ef7822'];
   const cubies = [];
   for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) cubies.push({ x, y, z, id: `${x}${y}${z}` });
-  return <group position={[2.35, DESK_TOP + 0.48, 0.5]} rotation={[0.16, -0.42, 0.12]}>{cubies.map(({ x, y, z, id }) => <group key={id} position={[x * 0.31, y * 0.31, z * 0.31]}>
-    <RoundedBox args={[0.285, 0.285, 0.285]} radius={0.035} smoothness={2} castShadow><meshStandardMaterial color="#111315" roughness={0.34} /></RoundedBox>
+  return <group position={[2.35, DESK_TOP + 0.48, 0.5]} rotation={[0, -0.42, 0]}>{cubies.map(({ x, y, z, id }) => <group key={id} position={[x * 0.31, y * 0.31, z * 0.31]}>
+    <RoundedBox args={[0.185, 0.185, 0.185]} radius={0.035} smoothness={2} castShadow><meshStandardMaterial color="#111315" roughness={0.34} /></RoundedBox>
     {x === 1 && <mesh position={[0.146, 0, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[0.22, 0.22]} /><meshStandardMaterial color={colors[0]} /></mesh>}
     {x === -1 && <mesh position={[-0.146, 0, 0]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[0.22, 0.22]} /><meshStandardMaterial color={colors[3]} /></mesh>}
     {y === 1 && <mesh position={[0, 0.146, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[0.22, 0.22]} /><meshStandardMaterial color={colors[2]} /></mesh>}
@@ -95,12 +95,30 @@ function Phone() {
   </group>;
 }
 
+// function Desk() {
+//   return <group>
+//     <RoundedBox args={[8.2, 0.18, 4.25]} radius={0.24} smoothness={5} position={[0, 0.09, 0]} receiveShadow><meshStandardMaterial color="#e9e6df" metalness={0.08} roughness={0.42} /></RoundedBox>
+//     <RoundedBox args={[8.05, 0.035, 4.1]} radius={0.2} smoothness={4} position={[0, 0.205, 0]} receiveShadow><meshStandardMaterial color="#f8f6f1" roughness={0.48} /></RoundedBox>
+//     <mesh position={[0, 0.225, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[7.8, 3.85]} /><meshStandardMaterial color="#f3f0e9" roughness={0.5} /></mesh>
+//   </group>;
+// }
+
 function Desk() {
-  return <group>
-    <RoundedBox args={[8.2, 0.18, 4.25]} radius={0.24} smoothness={5} position={[0, 0.09, 0]} receiveShadow><meshStandardMaterial color="#e9e6df" metalness={0.08} roughness={0.42} /></RoundedBox>
-    <RoundedBox args={[8.05, 0.035, 4.1]} radius={0.2} smoothness={4} position={[0, 0.205, 0]} receiveShadow><meshStandardMaterial color="#f8f6f1" roughness={0.48} /></RoundedBox>
-    <mesh position={[0, 0.225, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[7.8, 3.85]} /><meshStandardMaterial color="#f3f0e9" roughness={0.5} /></mesh>
-  </group>;
+  return (
+    <RoundedBox
+      args={[8.2, 0.18, 4.25]}
+      radius={0.24}
+      smoothness={5}
+      position={[0, 0.09, 0]}
+      receiveShadow
+    >
+      <meshStandardMaterial
+        color="#f3f0e9"
+        metalness={0.05}
+        roughness={0.45}
+      />
+    </RoundedBox>
+  );
 }
 
 function SceneContent() {
