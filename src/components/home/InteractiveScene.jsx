@@ -111,7 +111,7 @@ function Phone() {
 function Desk() {
   return (
     <RoundedBox
-      args={[8.2, 0.02, 2.25]}
+      args={[8.2, 0.005, 4.25]}
       radius={0.24}
       smoothness={5}
       position={[0, 0.09, 0]}
