@@ -118,8 +118,18 @@ export default function InteractiveScene() {
   return <div className="interactive-scene">
     <Canvas shadows dpr={[1, 1.5]} camera={{ position: [7.5, 5.8, 9.5], fov: 38 }}>
       <SceneContent />
-      <OrbitControls enablePan={false} enableZoom={false} autoRotate={false} minPolarAngle={Math.PI / 3.4} maxPolarAngle={Math.PI / 2.05} target={[0, 0.25, 0]} />
+      <OrbitControls
+        enablePan={false}
+        enableZoom={true}
+        zoomSpeed={0.7}
+        minDistance={7}
+        maxDistance={14}
+        autoRotate={false}
+        minPolarAngle={Math.PI / 3.4}
+        maxPolarAngle={Math.PI / 2.05}
+        target={[0, 0.25, 0]}
+      />
     </Canvas>
-    <div className="scene-hint"><span>↔</span> Drag to rotate</div>
+    <div className="scene-hint"><span>↔</span> Drag to rotate · Scroll to zoom</div>
   </div>;
 }
