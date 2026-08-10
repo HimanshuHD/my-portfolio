@@ -1,5 +1,9 @@
 /* Feature branch interaction/layout refinements */
 
+/* Keep the site header permanently pinned to the viewport. */
+.header{position:fixed!important;top:0;left:0;right:0;width:100%;z-index:100!important}
+.site>main{padding-top:82px}
+
 /* The hero grid is a transparent layout layer. It must not steal pointer events from the 3D canvas. */
 .hero-grid{pointer-events:none}
 .hero-copy{pointer-events:auto}
@@ -20,7 +24,6 @@
   -webkit-user-select:none;
 }
 
-/* Keep the canvas itself fully interactive without allowing drag gestures to select the hero copy. */
 .interactive-scene canvas{
   display:block;
   width:100%!important;
@@ -33,7 +36,6 @@
 }
 .interactive-scene canvas:active{cursor:grabbing!important}
 
-/* Keep the interaction hint above the WebGL canvas and visible without clipping. */
 .scene-hint{
   position:absolute!important;
   right:clamp(18px,4%,44px);
@@ -49,12 +51,10 @@
   opacity:1!important;
 }
 
-/* Give the CTA row and stats breathing room while keeping the hero compact enough for the scroll cue to land in the first viewport. */
 .hero-actions{margin-top:38px;margin-bottom:12px}
 .hero-stats{margin:clamp(22px,3vh,38px) auto 0}
 .scroll-down{margin:8px auto 0;padding:10px 22px}
 
-/* Desktop: reduce the hero's vertical footprint so stats + scroll cue remain visible without scrolling. */
 @media(min-width:851px){
   .hero{min-height:calc(100vh - 82px);padding-top:2vh;padding-bottom:0;justify-content:flex-start}
   .hero-grid{min-height:clamp(500px,61vh,600px)}
@@ -66,6 +66,7 @@
 }
 
 @media(max-width:850px){
+  .site>main{padding-top:81px}
   .hero-scene-layer{width:100%;height:430px;margin:-20px -2vw 0;right:auto;top:auto;pointer-events:none;overflow:visible}
   .scene-hint{right:18px;top:18px;font-size:10px;padding:10px 12px}
   .hero-actions{margin-top:30px;margin-bottom:18px}
