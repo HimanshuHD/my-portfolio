@@ -1,0 +1,12 @@
+/* Feature branch interaction/layout refinements */
+.hero-scene-layer{right:-1vw;top:2%;width:65%;height:74%;pointer-events:none}
+.hero-scene-layer .interactive-scene{pointer-events:auto}
+.interactive-scene{position:absolute;inset:-3% -4% -6% -4%;width:auto;height:auto;overflow:hidden;background:radial-gradient(circle at 52% 46%,rgba(20,27,31,.96) 0%,rgba(8,12,15,.98) 58%,rgba(5,8,11,.98) 100%);border:1px solid #242d32;border-radius:50%;box-shadow:0 28px 90px rgba(0,0,0,.58),0 0 70px rgba(217,255,84,.045),inset 0 0 90px rgba(255,255,255,.025);user-select:none;-webkit-user-select:none}
+.interactive-scene canvas{cursor:grab!important;user-select:none;-webkit-user-select:none;touch-action:none}
+.interactive-scene canvas:active{cursor:grabbing!important}
+.scene-hint{right:24px;top:22px;z-index:3;pointer-events:none;white-space:nowrap}
+.hero-actions{margin-top:38px;margin-bottom:8px}
+.hero-stats{margin:42px auto 0}
+.scroll-down{margin:16px auto 0}
+@media(max-width:1050px){.hero-scene-layer{right:-2vw;width:67%;height:72%}.interactive-scene{inset:-2% -3% -5% -3%}}
+@media(max-width:850px){.hero-scene-layer{width:100%;height:430px;margin:-20px -2vw 0;right:auto;top:auto;pointer-events:none}.interactive-scene{inset:-2% -5% -4% -5%;border-radius:46%}.scene-hint{right:18px;top:18px}.hero-actions{margin-top:30px;margin-bottom:12px}.hero-stats{margin:32px auto 0}.scroll-down{margin:14px auto 0}}
