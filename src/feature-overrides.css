@@ -3,14 +3,51 @@
 /* The hero grid is a transparent layout layer. It must not steal pointer events from the 3D canvas. */
 .hero-grid{pointer-events:none}
 .hero-copy{pointer-events:auto}
-.hero-scene-layer{right:-1vw;top:2%;width:65%;height:74%;pointer-events:none;z-index:2}
+.hero-scene-layer{right:-1vw;top:2%;width:65%;height:74%;pointer-events:none;z-index:2;overflow:visible}
 .hero-scene-layer .interactive-scene{pointer-events:auto}
 
-/* Keep the 3D viewport visually bounded and keep its controls inside the oval. */
-.interactive-scene{position:absolute;inset:-3% -4% -6% -4%;width:auto;height:auto;overflow:hidden;background:radial-gradient(circle at 52% 46%,rgba(20,27,31,.96) 0%,rgba(8,12,15,.98) 58%,rgba(5,8,11,.98) 100%);border:1px solid #242d32;border-radius:50%;box-shadow:0 28px 90px rgba(0,0,0,.58),0 0 70px rgba(217,255,84,.045),inset 0 0 90px rgba(255,255,255,.025);user-select:none;-webkit-user-select:none}
-.interactive-scene canvas{cursor:grab!important;user-select:none;-webkit-user-select:none;touch-action:none}
+/* The 3D scene is now a free-floating background visual — no oval/card container. */
+.interactive-scene{
+  position:relative;
+  width:100%;
+  height:100%;
+  overflow:visible;
+  background:transparent;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+/* Keep the canvas itself fully interactive without allowing drag gestures to select the hero copy. */
+.interactive-scene canvas{
+  display:block;
+  width:100%!important;
+  height:100%!important;
+  cursor:grab!important;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-user-drag:none;
+  touch-action:none;
+}
 .interactive-scene canvas:active{cursor:grabbing!important}
-.scene-hint{right:clamp(12px,2.5%,24px);top:clamp(12px,2.5%,24px);z-index:3;pointer-events:none;white-space:nowrap;max-width:calc(100% - 24px);box-sizing:border-box}
+
+/* Keep the interaction hint above the WebGL canvas and visible without clipping. */
+.scene-hint{
+  position:absolute!important;
+  right:clamp(18px,4%,44px);
+  top:clamp(18px,4%,34px);
+  z-index:20!important;
+  pointer-events:none;
+  white-space:nowrap;
+  max-width:none;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  visibility:visible!important;
+  opacity:1!important;
+}
 
 /* Give the CTA row and stats breathing room while keeping the hero compact enough for the scroll cue to land in the first viewport. */
 .hero-actions{margin-top:38px;margin-bottom:12px}
@@ -25,14 +62,12 @@
 }
 
 @media(max-width:1050px){
-  .hero-scene-layer{right:-2vw;width:67%;height:72%}
-  .interactive-scene{inset:-2% -3% -5% -3%}
+  .hero-scene-layer{right:-2vw;width:67%;height:72%;overflow:visible}
 }
 
 @media(max-width:850px){
-  .hero-scene-layer{width:100%;height:430px;margin:-20px -2vw 0;right:auto;top:auto;pointer-events:none}
-  .interactive-scene{inset:-2% -5% -4% -5%}
-  .scene-hint{right:12px;top:12px;max-width:calc(100% - 24px);font-size:10px;padding:10px 12px}
+  .hero-scene-layer{width:100%;height:430px;margin:-20px -2vw 0;right:auto;top:auto;pointer-events:none;overflow:visible}
+  .scene-hint{right:18px;top:18px;font-size:10px;padding:10px 12px}
   .hero-actions{margin-top:30px;margin-bottom:18px}
   .hero-stats{margin:26px auto 0}
   .scroll-down{margin:10px auto 0;padding:8px 18px}
