@@ -1,12 +1,55 @@
+import { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { ContactShadows, OrbitControls, RoundedBox, useTexture } from '@react-three/drei';
+import { ContactShadows, OrbitControls, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
-import bookCoverUrl from '../../assets/frontend-architecture-book-cover.svg?url';
+import bookCoverSvg from '../../assets/frontend-architecture-book-cover.svg?raw';
 
 const accent = '#d9ff54';
 const DESK_HEIGHT = 0.008;
 const DESK_Y = 0;
 const DESK_TOP = DESK_Y + DESK_HEIGHT;
+
+function useSvgCanvasTexture(svgMarkup) {
+  const [texture, setTexture] = useState(null);
+
+  useEffect(() => {
+    let disposed = false;
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 800;
+    const context = canvas.getContext('2d');
+    if (!context) return undefined;
+
+    const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+    const objectUrl = URL.createObjectURL(blob);
+    const image = new Image();
+
+    image.onload = () => {
+      if (disposed) return;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const nextTexture = new THREE.CanvasTexture(canvas);
+      nextTexture.colorSpace = THREE.SRGBColorSpace;
+      nextTexture.anisotropy = 8;
+      nextTexture.needsUpdate = true;
+      setTexture(nextTexture);
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    image.onerror = (error) => {
+      console.error('Failed to render book cover SVG into canvas texture.', error);
+      URL.revokeObjectURL(objectUrl);
+    };
+    image.src = objectUrl;
+
+    return () => {
+      disposed = true;
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [svgMarkup]);
+
+  return texture;
+}
 
 function Laptop() {
   const rows = ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
@@ -27,17 +70,9 @@ function Laptop() {
 function Mug() {
   return <group position={[-2.45, DESK_TOP + 0.34, 0.62]}>
     <mesh castShadow><cylinderGeometry args={[0.42, 0.37, 0.64, 48]} /><meshStandardMaterial color="#f0eee8" roughness={0.58} /></mesh>
-    {/* The rim must lie horizontally on the cup opening, not stand vertically. */}
-    <mesh position={[0, 0.325, 0]} rotation={[Math.PI / 2, 0, 0]}>
-      <torusGeometry args={[0.385, 0.028, 16, 48]} />
-      <meshStandardMaterial color="#d6d2c9" roughness={0.5} />
-    </mesh>
+    <mesh position={[0, 0.325, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.385, 0.028, 16, 48]} /><meshStandardMaterial color="#d6d2c9" roughness={0.5} /></mesh>
     <mesh position={[0, 0.322, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.335, 48]} /><meshStandardMaterial color="#17120f" roughness={0.36} /></mesh>
-    {/* Handle remains vertical and aligned with the mug body. */}
-    <mesh position={[0.43, 0, 0]} rotation={[0, 0, 0]}>
-      <torusGeometry args={[0.21, 0.065, 18, 40]} />
-      <meshStandardMaterial color="#ebe8df" roughness={0.55} />
-    </mesh>
+    <mesh position={[0.43, 0, 0]} rotation={[0, 0, 0]}><torusGeometry args={[0.21, 0.065, 18, 40]} /><meshStandardMaterial color="#ebe8df" roughness={0.55} /></mesh>
   </group>;
 }
 
@@ -53,30 +88,15 @@ function RubiksCube() {
 }
 
 function Book() {
-  const coverTexture = useTexture(bookCoverUrl);
-  coverTexture.colorSpace = THREE.SRGBColorSpace;
-  coverTexture.anisotropy = 8;
-  coverTexture.needsUpdate = true;
-
-  return <group
-    position={[-0.2, DESK_TOP + 0.08, 1.05]}
-    rotation={[0, Math.PI / 2, 0]}
-  >
-    <RoundedBox args={[1.1, 0.16, 1.45]} radius={0.035} smoothness={4} castShadow>
-      <meshStandardMaterial color="#e9e8e3" roughness={0.78} />
-    </RoundedBox>
+  const coverTexture = useSvgCanvasTexture(bookCoverSvg);
+  return <group position={[-0.2, DESK_TOP + 0.08, 1.05]} rotation={[0, Math.PI / 2, 0]}>
+    <RoundedBox args={[1.1, 0.16, 1.45]} radius={0.035} smoothness={4} castShadow><meshStandardMaterial color="#e9e8e3" roughness={0.78} /></RoundedBox>
     <mesh position={[0, 0.084, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
       <planeGeometry args={[1.02, 1.36]} />
-      <meshBasicMaterial map={coverTexture} toneMapped={false} side={THREE.FrontSide} />
+      <meshBasicMaterial map={coverTexture || undefined} color={coverTexture ? '#ffffff' : '#08a6a8'} toneMapped={false} side={THREE.DoubleSide} />
     </mesh>
-    <mesh position={[0, -0.084, 0]} rotation={[Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[1.02, 1.36]} />
-      <meshStandardMaterial color="#e2e1db" roughness={0.86} />
-    </mesh>
-    <mesh position={[-0.52, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
-      <planeGeometry args={[1.36, 0.12]} />
-      <meshStandardMaterial color="#deddd7" roughness={0.85} />
-    </mesh>
+    <mesh position={[0, -0.084, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[1.02, 1.36]} /><meshStandardMaterial color="#e2e1db" roughness={0.86} /></mesh>
+    <mesh position={[-0.52, 0, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[1.36, 0.12]} /><meshStandardMaterial color="#deddd7" roughness={0.85} /></mesh>
   </group>;
 }
 
