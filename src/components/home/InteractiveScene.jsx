@@ -57,12 +57,7 @@ function Laptop() {
 }
 
 function Mug() {
-  return <group position={[-2.45, DESK_TOP + 0.34, 0.62]}>
-    <mesh castShadow><cylinderGeometry args={[0.42, 0.37, 0.64, 48]} /><meshStandardMaterial color="#f0eee8" roughness={0.58} /></mesh>
-    <mesh position={[0, 0.325, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.385, 0.028, 16, 48]} /><meshStandardMaterial color="#d6d2c9" roughness={0.5} /></mesh>
-    <mesh position={[0, 0.322, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.335, 48]} /><meshStandardMaterial color="#17120f" roughness={0.36} /></mesh>
-    <mesh position={[0.43, 0, 0]} rotation={[0, 0, 0]}><torusGeometry args={[0.21, 0.065, 18, 40]} /><meshStandardMaterial color="#ebe8df" roughness={0.55} /></mesh>
-  </group>;
+  return <group position={[-2.45, DESK_TOP + 0.34, 0.62]}><mesh castShadow><cylinderGeometry args={[0.42, 0.37, 0.64, 48]} /><meshStandardMaterial color="#f0eee8" roughness={0.58} /></mesh><mesh position={[0, 0.325, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.385, 0.028, 16, 48]} /><meshStandardMaterial color="#d6d2c9" roughness={0.5} /></mesh><mesh position={[0, 0.322, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.335, 48]} /><meshStandardMaterial color="#17120f" roughness={0.36} /></mesh><mesh position={[0.43, 0, 0]} rotation={[0, 0, 0]}><torusGeometry args={[0.21, 0.065, 18, 40]} /><meshStandardMaterial color="#ebe8df" roughness={0.55} /></mesh></group>;
 }
 
 function RubiksCube() {
@@ -73,39 +68,15 @@ function RubiksCube() {
   const faceSize = 0.124;
   const faceOffset = 0.109;
   for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) cubies.push({ x, y, z, id: `${x}${y}${z}` });
-
-  // The cube is intentionally non-interactive. OrbitControls owns all pointer
-  // interaction for the scene, so individual cubies cannot be picked, dragged,
-  // or moved independently of the rigid cube group.
-  const noRaycast = () => null;
-
-  return <group position={[2.6, DESK_TOP + cubieSize / 2 + 0.01, 0.82]} rotation={[0, -0.42, 0]}>
-    {cubies.map(({ x, y, z, id }) => <group key={id} position={[x * cubeScale, y * cubeScale, z * cubeScale]}>
-      <RoundedBox args={[cubieSize, cubieSize, cubieSize]} radius={0.027} smoothness={2} castShadow raycast={noRaycast}><meshStandardMaterial color="#111315" roughness={0.34} /></RoundedBox>
-      {x === 1 && <mesh position={[faceOffset, 0, 0]} rotation={[0, Math.PI / 2, 0]} raycast={noRaycast}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[0]} /></mesh>}
-      {x === -1 && <mesh position={[-faceOffset, 0, 0]} rotation={[0, -Math.PI / 2, 0]} raycast={noRaycast}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[3]} /></mesh>}
-      {y === 1 && <mesh position={[0, faceOffset, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={noRaycast}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[2]} /></mesh>}
-      {y === -1 && <mesh position={[0, -faceOffset, 0]} rotation={[Math.PI / 2, 0, 0]} raycast={noRaycast}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[1]} /></mesh>}
-      {z === 1 && <mesh position={[0, 0, faceOffset]} raycast={noRaycast}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[4]} /></mesh>}
-      {z === -1 && <mesh position={[0, 0, -faceOffset]} rotation={[0, Math.PI, 0]} raycast={noRaycast}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[5]} /></mesh>}
-    </group>)}
-  </group>;
+  return <group position={[2.6, DESK_TOP + cubieSize / 2 + 0.01, 0.82]} rotation={[0, -0.42, 0]}>{cubies.map(({ x, y, z, id }) => <group key={id} position={[x * cubeScale, y * cubeScale, z * cubeScale]}><RoundedBox args={[cubieSize, cubieSize, cubieSize]} radius={0.027} smoothness={2} castShadow><meshStandardMaterial color="#111315" roughness={0.34} /></RoundedBox>{x === 1 && <mesh position={[faceOffset, 0, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[0]} /></mesh>}{x === -1 && <mesh position={[-faceOffset, 0, 0]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[3]} /></mesh>}{y === 1 && <mesh position={[0, faceOffset, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[2]} /></mesh>}{y === -1 && <mesh position={[0, -faceOffset, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[1]} /></mesh>}{z === 1 && <mesh position={[0, 0, faceOffset]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[4]} /></mesh>}{z === -1 && <mesh position={[0, 0, -faceOffset]} rotation={[0, Math.PI, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[5]} /></mesh>}</group>)}</group>;
 }
 
 function Book() {
   const coverTexture = useSvgCanvasTexture(bookCoverSvg);
-  return <group position={[-0.2, DESK_TOP + 0.08, 1.05]} rotation={[0, Math.PI / 2, 0]}>
-    <RoundedBox args={[1.1, 0.16, 1.45]} radius={0.035} smoothness={4} castShadow><meshStandardMaterial color="#e9e8e3" roughness={0.78} /></RoundedBox>
-    <mesh position={[0, 0.096, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={10}><planeGeometry args={[1.02, 1.36]} /><meshBasicMaterial map={coverTexture || undefined} color={coverTexture ? '#ffffff' : '#08a6a8'} toneMapped={false} side={THREE.DoubleSide} transparent opacity={1} depthWrite={false} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} /></mesh>
-    <mesh position={[0, -0.084, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[1.02, 1.36]} /><meshStandardMaterial color="#e2e1db" roughness={0.86} /></mesh>
-    <mesh position={[-0.52, 0, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[1.36, 0.12]} /><meshStandardMaterial color="#deddd7" roughness={0.85} /></mesh>
-  </group>;
+  return <group position={[-0.2, DESK_TOP + 0.08, 1.05]} rotation={[0, Math.PI / 2, 0]}><RoundedBox args={[1.1, 0.16, 1.45]} radius={0.035} smoothness={4} castShadow><meshStandardMaterial color="#e9e8e3" roughness={0.78} /></RoundedBox><mesh position={[0, 0.096, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={10}><planeGeometry args={[1.02, 1.36]} /><meshBasicMaterial map={coverTexture || undefined} color={coverTexture ? '#ffffff' : '#08a6a8'} toneMapped={false} side={THREE.DoubleSide} transparent opacity={1} depthWrite={false} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} /></mesh><mesh position={[0, -0.084, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[1.02, 1.36]} /><meshStandardMaterial color="#e2e1db" roughness={0.86} /></mesh><mesh position={[-0.52, 0, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[1.36, 0.12]} /><meshStandardMaterial color="#deddd7" roughness={0.85} /></mesh></group>;
 }
 
-function Plant() {
-  const leaves = [[-0.2, 0.64, 0, -0.2, 0.15], [-0.08, 0.86, 0, -0.1, -0.05], [0.1, 0.74, 0, 0.18, 0.08], [0.23, 0.91, 0, 0.28, -0.15], [0, 1.05, 0, 0, 0.2], [-0.27, 0.82, 0, -0.3, -0.12]];
-  return <group position={[-3.0, DESK_TOP, -0.7]}><mesh position={[0, 0.28, 0]} castShadow><cylinderGeometry args={[0.43, 0.34, 0.56, 32]} /><meshStandardMaterial color="#b5a28f" roughness={0.78} /></mesh><mesh position={[0, 0.57, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.39, 32]} /><meshStandardMaterial color="#302319" roughness={0.95} /></mesh>{leaves.map(([x, y, z, rx, rz], i) => <group key={i} position={[x, y, z]} rotation={[rx, 0, rz]}><mesh scale={[0.75, 1.35, 0.14]} castShadow><sphereGeometry args={[0.24, 16, 12]} /><meshStandardMaterial color={i % 2 ? '#4f812e' : '#6c963c'} roughness={0.82} /></mesh></group>)}</group>;
-}
+function Plant() { const leaves = [[-0.2, 0.64, 0, -0.2, 0.15], [-0.08, 0.86, 0, -0.1, -0.05], [0.1, 0.74, 0, 0.18, 0.08], [0.23, 0.91, 0, 0.28, -0.15], [0, 1.05, 0, 0, 0.2], [-0.27, 0.82, 0, -0.3, -0.12]]; return <group position={[-3.0, DESK_TOP, -0.7]}><mesh position={[0, 0.28, 0]} castShadow><cylinderGeometry args={[0.43, 0.34, 0.56, 32]} /><meshStandardMaterial color="#b5a28f" roughness={0.78} /></mesh><mesh position={[0, 0.57, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.39, 32]} /><meshStandardMaterial color="#302319" roughness={0.95} /></mesh>{leaves.map(([x, y, z, rx, rz], i) => <group key={i} position={[x, y, z]} rotation={[rx, 0, rz]}><mesh scale={[0.75, 1.35, 0.14]} castShadow><sphereGeometry args={[0.24, 16, 12]} /><meshStandardMaterial color={i % 2 ? '#4f812e' : '#6c963c'} roughness={0.82} /></mesh></group>)}</group>; }
 
 function Lamp() { return <group position={[3.5, DESK_TOP, -0.92]}><mesh position={[0, 0.06, 0]} castShadow><cylinderGeometry args={[0.38, 0.46, 0.12, 32]} /><meshStandardMaterial color="#303438" metalness={0.72} roughness={0.24} /></mesh><mesh position={[0, 0.64, 0]} castShadow><cylinderGeometry args={[0.045, 0.06, 1.15, 16]} /><meshStandardMaterial color="#3d4145" metalness={0.82} roughness={0.22} /></mesh><mesh position={[0, 1.18, 0]} rotation={[0.25, 0, 0]} castShadow><sphereGeometry args={[0.22, 24, 16]} /><meshStandardMaterial color="#303438" metalness={0.7} roughness={0.25} /></mesh><mesh position={[0, 1.1, 0.14]} rotation={[0.25, 0, 0]}><coneGeometry args={[0.34, 0.42, 32, 1, true]} /><meshStandardMaterial color="#c7b99f" roughness={0.65} side={THREE.DoubleSide} /></mesh><mesh position={[0, 1.04, 0.2]} rotation={[0.25, 0, 0]}><sphereGeometry args={[0.11, 24, 16]} /><meshStandardMaterial color="#fff0bf" emissive="#ffbd58" emissiveIntensity={2.2} /></mesh><pointLight position={[0, 1, 0.25]} color="#ffc76b" intensity={5} distance={4} castShadow /></group>; }
 
