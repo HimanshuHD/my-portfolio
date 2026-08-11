@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { applyMove, applyMoves, inverseMoves } from '../components/rubiks/CubeMoves';
+import { applyMove, applyMoves, invertMoves } from '../components/rubiks/CubeMoves';
 import { createSolvedCube, getFacelets, serializeCube } from '../components/rubiks/CubeState';
 import { createScramble } from '../components/rubiks/Scramble';
 import { isSolved } from '../components/rubiks/SolvedState';
@@ -12,7 +12,7 @@ const CASES = [
   { id: 'four-u', name: 'U × 4 returns solved', run: () => isSolved(applyMoves(createSolvedCube(), ['U', 'U', 'U', 'U'])) },
   { id: 'four-f', name: 'F × 4 returns solved', run: () => isSolved(applyMoves(createSolvedCube(), ['F', 'F', 'F', 'F'])) },
   { id: 'double', name: 'R2 equals R + R', run: () => serializeCube(applyMove(createSolvedCube(), 'R2')) === serializeCube(applyMoves(createSolvedCube(), ['R', 'R'])) },
-  { id: 'sequence', name: 'Sequence + inverse returns solved', run: () => { const sequence = ['R', 'U', "R'", 'F2', 'D', "L'", 'B2']; return isSolved(applyMoves(createSolvedCube(), [...sequence, ...inverseMoves(sequence)])); } },
+  { id: 'sequence', name: 'Sequence + inverse returns solved', run: () => { const sequence = ['R', 'U', "R'", 'F2', 'D', "L'", 'B2']; return isSolved(applyMoves(createSolvedCube(), [...sequence, ...invertMoves(sequence)])); } },
   { id: 'scramble', name: 'Generated scramble is valid', run: () => { const sequence = createScramble(20); return sequence.length === 20 && sequence.every((move) => /^[URFDLB](2|'|)?$/.test(move)); } },
 ];
 
