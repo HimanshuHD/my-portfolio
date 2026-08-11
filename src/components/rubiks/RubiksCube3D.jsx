@@ -12,9 +12,10 @@ function Sticker({ sticker }) {
   if (ny) rotation = [-Math.PI / 2, 0, 0];
   else if (nx) rotation = [0, Math.PI / 2, 0];
   else if (nz < 0) rotation = [0, Math.PI, 0];
+  const color = FACE_COLORS[sticker.color] || '#ffffff';
   return <mesh position={[x * 0.52 + nx * 0.275, y * 0.52 + ny * 0.275, z * 0.52 + nz * 0.275]} rotation={rotation}>
     <planeGeometry args={[0.43, 0.43]} />
-    <meshStandardMaterial color={FACE_COLORS[sticker.color]} roughness={0.42} side={THREE.DoubleSide} />
+    <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.08} roughness={0.38} metalness={0.02} side={THREE.DoubleSide} toneMapped={false} />
   </mesh>;
 }
 
