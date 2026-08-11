@@ -1,0 +1,77 @@
+/* Feature branch interaction/layout refinements */
+
+/* Keep the site header permanently pinned to the viewport. */
+.header{position:fixed!important;top:0;left:0;right:0;width:100%;z-index:100!important}
+.site>main{padding-top:82px}
+
+/* The hero grid is a transparent layout layer. It must not steal pointer events from the 3D canvas. */
+.hero-grid{pointer-events:none}
+.hero-copy{pointer-events:auto}
+.hero-scene-layer{right:-1vw;top:2%;width:65%;height:74%;pointer-events:none;z-index:2;overflow:visible}
+.hero-scene-layer .interactive-scene{pointer-events:auto}
+
+/* The 3D scene is a free-floating background visual on desktop. */
+.interactive-scene{
+  position:relative;
+  width:100%;
+  height:100%;
+  overflow:visible;
+  background:transparent;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+.interactive-scene canvas{
+  display:block;
+  width:100%!important;
+  height:100%!important;
+  cursor:grab!important;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-user-drag:none;
+  touch-action:none;
+}
+.interactive-scene canvas:active{cursor:grabbing!important}
+
+.scene-hint{
+  position:absolute!important;
+  right:clamp(18px,4%,44px);
+  top:clamp(18px,4%,34px);
+  z-index:20!important;
+  pointer-events:none;
+  white-space:nowrap;
+  max-width:none;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  visibility:visible!important;
+  opacity:1!important;
+}
+
+.hero-actions{margin-top:38px;margin-bottom:12px}
+.hero-stats{margin:clamp(22px,3vh,38px) auto 0}
+.scroll-down{margin:8px auto 0;padding:10px 22px}
+
+@media(min-width:851px){
+  .hero{min-height:calc(100vh - 82px);padding-top:2vh;padding-bottom:0;justify-content:flex-start}
+  .hero-grid{min-height:clamp(500px,61vh,600px)}
+  .hero-copy{transform:translateY(-1.5vh)}
+}
+
+@media(max-width:1050px) and (min-width:851px){
+  .hero-scene-layer{right:-2vw;width:67%;height:72%;overflow:visible}
+}
+
+/* Mobile: hide the entire Three.js scene. The portfolio becomes a clean content-first layout. */
+@media(max-width:850px){
+  .site>main{padding-top:81px}
+  .hero-scene-layer{display:none!important}
+  .interactive-scene{display:none!important}
+  .scene-hint{display:none!important}
+  .hero-actions{margin-top:30px;margin-bottom:18px}
+  .hero-stats{margin:26px auto 0}
+  .scroll-down{margin:10px auto 0;padding:8px 18px}
+}

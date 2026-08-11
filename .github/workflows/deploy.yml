@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-production
   cancel-in-progress: true
 
 jobs:
@@ -26,14 +26,14 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
-      - name: Build
+      - name: Build production
         run: npm run build
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload production artifact
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist
-      - name: Deploy
+      - name: Deploy production
         id: deployment
         uses: actions/deploy-pages@v4
