@@ -1,0 +1,1 @@
+export { isSolved } from './CubeState';
