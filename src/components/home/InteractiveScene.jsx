@@ -26,9 +26,17 @@ function Laptop() {
 function Mug() {
   return <group position={[-2.45, DESK_TOP + 0.34, 0.62]}>
     <mesh castShadow><cylinderGeometry args={[0.42, 0.37, 0.64, 48]} /><meshStandardMaterial color="#f0eee8" roughness={0.58} /></mesh>
-    <mesh position={[0, 0.325, 0]}><torusGeometry args={[0.385, 0.028, 16, 48]} /><meshStandardMaterial color="#d6d2c9" roughness={0.5} /></mesh>
+    {/* The rim must lie horizontally on the cup opening, not stand vertically. */}
+    <mesh position={[0, 0.325, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <torusGeometry args={[0.385, 0.028, 16, 48]} />
+      <meshStandardMaterial color="#d6d2c9" roughness={0.5} />
+    </mesh>
     <mesh position={[0, 0.322, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.335, 48]} /><meshStandardMaterial color="#17120f" roughness={0.36} /></mesh>
-    <mesh position={[0.43, 0, 0]}><torusGeometry args={[0.21, 0.065, 18, 40]} /><meshStandardMaterial color="#ebe8df" roughness={0.55} /></mesh>
+    {/* Handle remains vertical and aligned with the mug body. */}
+    <mesh position={[0.43, 0, 0]} rotation={[0, 0, 0]}>
+      <torusGeometry args={[0.21, 0.065, 18, 40]} />
+      <meshStandardMaterial color="#ebe8df" roughness={0.55} />
+    </mesh>
   </group>;
 }
 
@@ -46,17 +54,30 @@ function RubiksCube() {
 function Book() {
   const coverTexture = useTexture(`${import.meta.env.BASE_URL}assets/frontend-architecture-book-cover.svg`);
   coverTexture.colorSpace = THREE.SRGBColorSpace;
-  return <group position={[1.45, DESK_TOP + 0.08, 0.82]} rotation={[0, -0.12, -0.04]}>
-    <RoundedBox args={[1.1, 0.16, 1.45]} radius={0.035} smoothness={4} castShadow><meshStandardMaterial color="#e9e8e3" roughness={0.78} /></RoundedBox>
-    <mesh position={[0, 0.084, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow><planeGeometry args={[1.02, 1.36]} /><meshStandardMaterial map={coverTexture} roughness={0.72} /></mesh>
-    <mesh position={[0, -0.084, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[1.02, 1.36]} /><meshStandardMaterial color="#e2e1db" roughness={0.86} /></mesh>
-    <mesh position={[-0.52, 0, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[1.36, 0.12]} /><meshStandardMaterial color="#deddd7" roughness={0.85} /></mesh>
-  </group>;
-}
+  coverTexture.anisotropy = 8;
 
-function Headphones() {
-  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-0.58, 0.045, 0.14), new THREE.Vector3(-0.55, 0.045, -0.08), new THREE.Vector3(-0.32, 0.045, -0.3), new THREE.Vector3(0, 0.045, -0.38), new THREE.Vector3(0.32, 0.045, -0.3), new THREE.Vector3(0.55, 0.045, -0.08), new THREE.Vector3(0.58, 0.045, 0.14)]);
-  return <group position={[-0.2, DESK_TOP, 1.05]} rotation={[0, -0.08, 0]}><mesh castShadow><tubeGeometry args={[curve, 48, 0.075, 14, false]} /><meshStandardMaterial color="#111416" metalness={0.8} roughness={0.2} /></mesh>{[-0.58, 0.58].map((x) => <group key={x} position={[x, 0.08, 0.14]}><mesh castShadow><cylinderGeometry args={[0.27, 0.27, 0.12, 48]} /><meshStandardMaterial color="#25292c" metalness={0.68} roughness={0.24} /></mesh><mesh position={[0, 0.067, 0]}><cylinderGeometry args={[0.17, 0.17, 0.025, 48]} /><meshStandardMaterial color="#596269" roughness={0.42} /></mesh><RoundedBox args={[0.18, 0.075, 0.28]} radius={0.025} smoothness={3} position={[0, 0.03, -0.03]} castShadow><meshStandardMaterial color="#303438" metalness={0.55} roughness={0.28} /></RoundedBox></group>)}</group>;
+  return <group
+    // Same area previously occupied by the headphones. Rotating around Y by 90° keeps
+    // the book flat on the tabletop while changing its facing direction.
+    position={[-0.2, DESK_TOP + 0.08, 1.05]}
+    rotation={[0, Math.PI / 2, 0]}
+  >
+    <RoundedBox args={[1.1, 0.16, 1.45]} radius={0.035} smoothness={4} castShadow>
+      <meshStandardMaterial color="#e9e8e3" roughness={0.78} />
+    </RoundedBox>
+    <mesh position={[0, 0.084, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
+      <planeGeometry args={[1.02, 1.36]} />
+      <meshStandardMaterial map={coverTexture} color="#ffffff" roughness={0.72} toneMapped={false} />
+    </mesh>
+    <mesh position={[0, -0.084, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[1.02, 1.36]} />
+      <meshStandardMaterial color="#e2e1db" roughness={0.86} />
+    </mesh>
+    <mesh position={[-0.52, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+      <planeGeometry args={[1.36, 0.12]} />
+      <meshStandardMaterial color="#deddd7" roughness={0.85} />
+    </mesh>
+  </group>;
 }
 
 function Plant() {
@@ -73,17 +94,7 @@ function Phone() {
 }
 
 function Desk() {
-  return (
-    <RoundedBox
-      args={[8.2, DESK_HEIGHT, 4.25]}
-      radius={0.02}
-      smoothness={5}
-      position={[0, DESK_Y, 0]}
-      receiveShadow
-    >
-      <meshStandardMaterial color="#f3f0e9" metalness={0.05} roughness={0.45} />
-    </RoundedBox>
-  );
+  return <RoundedBox args={[8.2, DESK_HEIGHT, 4.25]} radius={0.02} smoothness={5} position={[0, DESK_Y, 0]} receiveShadow><meshStandardMaterial color="#f3f0e9" metalness={0.05} roughness={0.45} /></RoundedBox>;
 }
 
 function SceneContent() {
@@ -92,27 +103,11 @@ function SceneContent() {
     <directionalLight position={[-4, 7, 4]} intensity={2.6} color="#ffffff" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
     <directionalLight position={[4, 4, -2]} intensity={1.5} color="#d9ffed" />
     <pointLight position={[-3, 3, 2]} intensity={1.0} color={accent} distance={8} />
-    <Desk /><Plant /><Mug /><Laptop /><Headphones /><Phone /><RubiksCube /><Book /><Lamp />
+    <Desk /><Plant /><Mug /><Laptop /><Phone /><RubiksCube /><Book /><Lamp />
     <ContactShadows position={[0, 0.23, 0]} opacity={0.28} scale={8} blur={2.8} far={4.5} />
   </>;
 }
 
 export default function InteractiveScene() {
-  return <div className="interactive-scene">
-    <Canvas shadows dpr={[1, 1.5]} camera={{ position: [7.5, 5.8, 9.5], fov: 38 }}>
-      <SceneContent />
-      <OrbitControls
-        enablePan={false}
-        enableZoom={true}
-        zoomSpeed={0.7}
-        minDistance={7}
-        maxDistance={14}
-        autoRotate={false}
-        minPolarAngle={Math.PI / 3.4}
-        maxPolarAngle={Math.PI / 2.05}
-        target={[0, 0.25, 0]}
-      />
-    </Canvas>
-    <div className="scene-hint"><span>↔</span> Drag to rotate · Scroll to zoom</div>
-  </div>;
+  return <div className="interactive-scene"><Canvas shadows dpr={[1, 1.5]} camera={{ position: [7.5, 5.8, 9.5], fov: 38 }}><SceneContent /><OrbitControls enablePan={false} enableZoom={true} zoomSpeed={0.7} minDistance={7} maxDistance={14} autoRotate={false} minPolarAngle={Math.PI / 3.4} maxPolarAngle={Math.PI / 2.05} target={[0, 0.25, 0]} /></Canvas><div className="scene-hint"><span>↔</span> Drag to rotate · Scroll to zoom</div></div>;
 }
