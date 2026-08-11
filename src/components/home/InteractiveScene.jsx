@@ -20,6 +20,10 @@ function useSvgCanvasTexture(svgMarkup) {
     const context = canvas.getContext('2d');
     if (!context) return undefined;
 
+    // Keep the canvas itself transparent so the texture can participate in
+    // the book's material transparency instead of introducing a solid canvas background.
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
     const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
     const objectUrl = URL.createObjectURL(blob);
     const image = new Image();
@@ -91,9 +95,20 @@ function Book() {
   const coverTexture = useSvgCanvasTexture(bookCoverSvg);
   return <group position={[-0.2, DESK_TOP + 0.08, 1.05]} rotation={[0, Math.PI / 2, 0]}>
     <RoundedBox args={[1.1, 0.16, 1.45]} radius={0.035} smoothness={4} castShadow><meshStandardMaterial color="#e9e8e3" roughness={0.78} /></RoundedBox>
-    <mesh position={[0, 0.084, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
+    <mesh position={[0, 0.096, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={10}>
       <planeGeometry args={[1.02, 1.36]} />
-      <meshBasicMaterial map={coverTexture || undefined} color={coverTexture ? '#ffffff' : '#08a6a8'} toneMapped={false} side={THREE.DoubleSide} />
+      <meshBasicMaterial
+        map={coverTexture || undefined}
+        color={coverTexture ? '#ffffff' : '#08a6a8'}
+        toneMapped={false}
+        side={THREE.DoubleSide}
+        transparent={true}
+        opacity={1}
+        depthWrite={false}
+        polygonOffset={true}
+        polygonOffsetFactor={-2}
+        polygonOffsetUnits={-2}
+      />
     </mesh>
     <mesh position={[0, -0.084, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[1.02, 1.36]} /><meshStandardMaterial color="#e2e1db" roughness={0.86} /></mesh>
     <mesh position={[-0.52, 0, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[1.36, 0.12]} /><meshStandardMaterial color="#deddd7" roughness={0.85} /></mesh>
