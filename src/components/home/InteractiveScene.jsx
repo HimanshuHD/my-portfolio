@@ -63,7 +63,6 @@ function Mug() {
 function RubiksCube() {
   const colors = ['#e12d2d', '#f4f0d7', '#f0d329', '#198b49', '#1769aa', '#ef7822'];
   const cubies = [];
-  // Keep the original compact cube geometry; pointer handling is fixed separately.
   const cubeScale = 0.1725;
   const cubieSize = 0.214;
   const faceSize = 0.124;
@@ -88,4 +87,4 @@ function Desk() { return <RoundedBox args={[8.2, DESK_HEIGHT, 4.25]} radius={0.0
 
 function SceneContent() { return <><ambientLight intensity={1.15} color="#ffffff" /><directionalLight position={[-4, 7, 4]} intensity={2.6} color="#ffffff" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} /><directionalLight position={[4, 4, -2]} intensity={1.5} color="#d9ffed" /><pointLight position={[-3, 3, 2]} intensity={1.0} color={accent} distance={8} /><Desk /><Plant /><Mug /><Laptop /><Phone /><RubiksCube /><Book /><Lamp /><ContactShadows position={[0, 0.23, 0]} opacity={0.28} scale={8} blur={2.8} far={4.5} /></>; }
 
-export default function InteractiveScene() { return <div className="interactive-scene"><Canvas shadows dpr={[1, 1.5]} camera={{ position: [6.7 5.15, 8.45], fov: 38 }}><SceneContent /><OrbitControls enablePan={false} enableZoom={true} zoomSpeed={0.7} minDistance={7} maxDistance={14} autoRotate={false} minPolarAngle={Math.PI / 3.4} maxPolarAngle={Math.PI / 2.05} target={[0.65, 0.25, 0]} /></Canvas><div className="scene-hint"><span>↔</span> Drag to rotate · Scroll to zoom</div></div>; }
+export default function InteractiveScene() { return <div className="interactive-scene"><Canvas shadows dpr={[1, 1.5]} camera={{ position: [6.7, 5.15, 8.45], fov: 38 }}><SceneContent /><OrbitControls enablePan={false} enableZoom={true} zoomSpeed={0.7} minDistance={7} maxDistance={14} autoRotate={false} minPolarAngle={Math.PI / 3.4} maxPolarAngle={Math.PI / 2.05} target={[0.65, 0.25, 0]} /></Canvas><div className="scene-hint"><span>↔</span> Drag to rotate · Scroll to zoom</div></div>; }
