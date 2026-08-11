@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { ContactShadows, OrbitControls, RoundedBox, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
+import bookCoverUrl from '../../assets/frontend-architecture-book-cover.svg?url';
 
 const accent = '#d9ff54';
 const DESK_HEIGHT = 0.008;
@@ -9,7 +10,7 @@ const DESK_TOP = DESK_Y + DESK_HEIGHT;
 
 function Laptop() {
   const rows = ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
-  return <group position={[0, DESK_TOP + 0.09, -0.55]} rotation={[0, -0.08, 0]}>
+  return <group position={[0, DESK_TOP + 0.09, -0.55]} rotation={[0, 0, 0]}>
     <RoundedBox args={[3.55, 0.16, 2.05]} radius={0.08} smoothness={5} castShadow><meshStandardMaterial color="#4b5054" metalness={0.78} roughness={0.24} /></RoundedBox>
     <group position={[0, 0.92, -0.94]} rotation={[-0.08, 0, 0]}>
       <RoundedBox args={[3.12, 1.86, 0.12]} radius={0.08} smoothness={5} castShadow><meshStandardMaterial color="#202428" metalness={0.82} roughness={0.2} /></RoundedBox>
@@ -52,13 +53,12 @@ function RubiksCube() {
 }
 
 function Book() {
-  const coverTexture = useTexture(`${import.meta.env.BASE_URL}assets/frontend-architecture-book-cover.svg`);
+  const coverTexture = useTexture(bookCoverUrl);
   coverTexture.colorSpace = THREE.SRGBColorSpace;
   coverTexture.anisotropy = 8;
+  coverTexture.needsUpdate = true;
 
   return <group
-    // Same area previously occupied by the headphones. Rotating around Y by 90° keeps
-    // the book flat on the tabletop while changing its facing direction.
     position={[-0.2, DESK_TOP + 0.08, 1.05]}
     rotation={[0, Math.PI / 2, 0]}
   >
@@ -67,7 +67,7 @@ function Book() {
     </RoundedBox>
     <mesh position={[0, 0.084, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
       <planeGeometry args={[1.02, 1.36]} />
-      <meshStandardMaterial map={coverTexture} color="#ffffff" roughness={0.72} toneMapped={false} />
+      <meshBasicMaterial map={coverTexture} toneMapped={false} side={THREE.FrontSide} />
     </mesh>
     <mesh position={[0, -0.084, 0]} rotation={[Math.PI / 2, 0, 0]}>
       <planeGeometry args={[1.02, 1.36]} />
