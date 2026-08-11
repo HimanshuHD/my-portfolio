@@ -5,7 +5,7 @@ import * as THREE from 'three';
 const accent = '#d9ff54';
 const DESK_HEIGHT = 0.008;
 const DESK_Y = 0;
-const DESK_TOP = DESK_Y + DESK_HEIGHT / 2;
+const DESK_TOP = DESK_Y + DESK_HEIGHT;
 
 function Laptop() {
   const rows = ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
