@@ -132,7 +132,7 @@ export default function RubiksGame({ onClose }) {
     setScramble(sequence);
     setMoves(0);
     setElapsed(0);
-    setStartedAt(Date.now());
+    setStartedAt(null);
 
     startSequence(animationSequence, solvedCube, ROTATION_DURATION, false);
   };
@@ -164,11 +164,11 @@ export default function RubiksGame({ onClose }) {
   const isAnimating = Boolean(activeMove || pendingMove);
   const status = solved ? 'Solved ✓' : isAnimating ? 'Animating…' : 'In progress';
 
-  const modal = <div className="rubiks-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+  const modal = <div className="rubiks-modal-backdrop" role="presentation">
     <section className="rubiks-game-modal" role="dialog" aria-modal="true" aria-labelledby="rubiks-game-title">
       <button className="rubiks-close" type="button" onClick={onClose} aria-label="Close Rubik's Cube game">×</button>
       <div className="rubiks-game-header"><div><span className="rubiks-kicker">INTERACTIVE MINI GAME</span><h2 id="rubiks-game-title">Solve the Rubik's Cube</h2><p>Scramble it, rotate the faces, and solve it in as few moves as possible.</p></div><div className="rubiks-status">{status}</div></div>
-      <div className="rubiks-game-layout"><RubiksCube3D cube={cube} activeMove={activeMove} moveDuration={moveDuration} onAnimationComplete={finishAnimation} /><aside className="rubiks-controls"><div className="rubiks-stats"><div><strong>{moves}</strong><span>Moves</span></div><div><strong>{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</strong><span>Time</span></div></div><div className="rubiks-actions"><button type="button" className="button primary" onClick={scrambleCube} disabled={isAnimating}>Scramble</button><button type="button" className="button ghost" onClick={resetCube}>Reset</button></div><div className="rubiks-moves"><span>Face turns</span><div>{MOVE_BUTTONS.map((move) => <button key={move} type="button" onClick={() => handleMove(move)} disabled={isAnimating}>{move}</button>)}</div></div>{scramble.length > 0 && <div className="rubiks-scramble"><span>Scramble</span><p>{scrambleToString(scramble)}</p></div>}</aside></div>
+      <div className="rubiks-game-layout"><div className="rubiks-cube-stage"><RubiksCube3D cube={cube} activeMove={activeMove} moveDuration={moveDuration} onAnimationComplete={finishAnimation} />{solved && <div className="rubiks-solved-celebration" aria-live="polite"><span className="celebration-particle particle-1" /><span className="celebration-particle particle-2" /><span className="celebration-particle particle-3" /><span className="celebration-particle particle-4" /><span className="celebration-particle particle-5" /><span className="celebration-particle particle-6" /><div className="rubiks-solved-badge">SOLVED! ✦</div></div>}</div><aside className="rubiks-controls"><div className="rubiks-stats"><div><strong>{moves}</strong><span>Moves</span></div><div><strong>{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</strong><span>Time</span></div></div><div className="rubiks-actions"><button type="button" className="button primary" onClick={scrambleCube} disabled={isAnimating}>Scramble</button><button type="button" className="button ghost" onClick={resetCube}>Reset</button></div><div className="rubiks-moves"><span>Face turns</span><div>{MOVE_BUTTONS.map((move) => <button key={move} type="button" onClick={() => handleMove(move)} disabled={isAnimating}>{move}</button>)}</div></div>{scramble.length > 0 && <div className="rubiks-scramble"><span>Scramble</span><p>{scrambleToString(scramble)}</p></div>}</aside></div>
     </section>
   </div>;
 
