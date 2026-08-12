@@ -12,7 +12,7 @@ const FACE_COLORS = {
 };
 
 const STICKER_SIZE = 0.43;
-const STICKER_RADIUS = 0.018;
+const STICKER_RADIUS = 0.032;
 // Match the visual spacing used by RubiksCube3D so adjacent cubies meet.
 const CUBIE_SIZE = 0.55;
 
@@ -67,7 +67,10 @@ function Sticker({ sticker }) {
         emissiveIntensity={0.08}
         roughness={0.38}
         metalness={0.02}
-        side={THREE.DoubleSide}
+        side={THREE.FrontSide}
+        polygonOffset
+        polygonOffsetFactor={-1}
+        polygonOffsetUnits={-1}
       />
     </mesh>
   );
