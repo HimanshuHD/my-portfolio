@@ -14,8 +14,6 @@ const NORMAL_FACE = {
 };
 
 const CUBIE_SPACING = 0.55;
-// Fixed presentation angle for a newly opened game. User can still rotate the cube
-// after the modal opens; reopening the modal restores this reference orientation.
 const INITIAL_CUBE_ROTATION = [0.48, -0.68, 0];
 
 function cubieKey(position) {
@@ -72,7 +70,6 @@ function AnimatedLayer({ cubies, definition, amount, duration, onComplete }) {
 
     elapsedRef.current += delta;
     const progress = Math.min(elapsedRef.current / (totalDuration / 1000), 1);
-
     const eased = progress < 0.5
       ? 4 * progress * progress * progress
       : 1 - Math.pow(-2 * progress + 2, 3) / 2;
@@ -96,6 +93,43 @@ function AnimatedLayer({ cubies, definition, amount, duration, onComplete }) {
       ))}
     </group>
   );
+}
+
+function PerformanceSampler({ onPerformance }) {
+  const sampleRef = useRef({ elapsed: 0, frames: 0 });
+
+  useFrame((state, delta) => {
+    sampleRef.current.elapsed += delta;
+    sampleRef.current.frames += 1;
+
+    if (sampleRef.current.elapsed < 0.5) return;
+
+    const renderer = state.gl;
+    const info = renderer.info;
+    const fps = sampleRef.current.frames / sampleRef.current.elapsed;
+    const memory = typeof performance !== 'undefined' && performance.memory
+      ? {
+          usedMB: performance.memory.usedJSHeapSize / 1024 / 1024,
+          totalMB: performance.memory.totalJSHeapSize / 1024 / 1024,
+        }
+      : null;
+
+    onPerformance?.({
+      fps,
+      geometries: info.memory.geometries,
+      textures: info.memory.textures,
+      calls: info.render.calls,
+      triangles: info.render.triangles,
+      points: info.render.points,
+      lines: info.render.lines,
+      jsHeap: memory,
+    });
+
+    sampleRef.current.elapsed = 0;
+    sampleRef.current.frames = 0;
+  });
+
+  return null;
 }
 
 function GameCube({ cube, activeMove, moveDuration, onAnimationComplete }) {
@@ -138,12 +172,13 @@ function GameCube({ cube, activeMove, moveDuration, onAnimationComplete }) {
   );
 }
 
-export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onAnimationComplete }) {
+export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onAnimationComplete, onPerformance }) {
   return (
     <div className="rubiks-game-canvas">
       <Canvas camera={{ position: [3.5, 3.1, 4.4], fov: 42 }} shadows>
         <ambientLight intensity={1.5} />
         <directionalLight position={[4, 6, 5]} intensity={2.4} castShadow />
+        <PerformanceSampler onPerformance={onPerformance} />
         <GameCube
           cube={cube}
           activeMove={activeMove}
