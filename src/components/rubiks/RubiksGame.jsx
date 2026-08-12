@@ -9,6 +9,7 @@ import { isSolved } from './SolvedState';
 
 const MOVE_BUTTONS = ['U', "U'", 'U2', 'R', "R'", 'R2', 'F', "F'", 'F2', 'D', "D'", 'D2', 'L', "L'", 'L2', 'B', "B'", 'B2'];
 const ROTATION_DURATION = 500;
+const MOVE_TRANSITION_DELAY = 16;
 
 export default function RubiksGame({ onClose }) {
   const [cube, setCube] = useState(createSolvedCube);
@@ -22,6 +23,7 @@ export default function RubiksGame({ onClose }) {
   const activeMoveRef = useRef(null);
   const animationIdRef = useRef(0);
   const queueRef = useRef([]);
+  const transitionTimerRef = useRef(null);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -35,6 +37,7 @@ export default function RubiksGame({ onClose }) {
       animationIdRef.current += 1;
       activeMoveRef.current = null;
       queueRef.current = [];
+      if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
       document.body.style.overflow = previousOverflow;
       document.body.style.paddingRight = previousPaddingRight;
     };
@@ -76,7 +79,12 @@ export default function RubiksGame({ onClose }) {
       animationIdRef.current = nextId;
       const nextMove = { move: next.move, id: nextId, countMoves: next.countMoves };
       activeMoveRef.current = nextMove;
-      setActiveMove(nextMove);
+
+      if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = window.setTimeout(() => {
+        if (activeMoveRef.current?.id === nextId) setActiveMove(nextMove);
+        transitionTimerRef.current = null;
+      }, MOVE_TRANSITION_DELAY);
     } else {
       activeMoveRef.current = null;
       setActiveMove(null);
@@ -93,6 +101,7 @@ export default function RubiksGame({ onClose }) {
     animationIdRef.current += 1;
     queueRef.current = [];
     activeMoveRef.current = null;
+    if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
     cubeRef.current = solvedCube;
 
     setActiveMove(null);
@@ -109,6 +118,7 @@ export default function RubiksGame({ onClose }) {
     animationIdRef.current += 1;
     activeMoveRef.current = null;
     queueRef.current = [];
+    if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
     const solvedCube = createSolvedCube();
     cubeRef.current = solvedCube;
     setActiveMove(null);
