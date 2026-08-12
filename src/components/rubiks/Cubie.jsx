@@ -67,7 +67,7 @@ function Sticker({ sticker }) {
         emissiveIntensity={0.08}
         roughness={0.38}
         metalness={0.02}
-        side={THREE.FrontSide}
+        side={THREE.DoubleSide}
         polygonOffset
         polygonOffsetFactor={-1}
         polygonOffsetUnits={-1}
