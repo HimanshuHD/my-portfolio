@@ -8,7 +8,7 @@ import { createScramble, expandAnimationMoves, scrambleToString } from './Scramb
 import { isSolved } from './SolvedState';
 
 const MOVE_BUTTONS = ['U', "U'", 'U2', 'R', "R'", 'R2', 'F', "F'", 'F2', 'D', "D'", 'D2', 'L', "L'", 'L2', 'B', "B'", 'B2'];
-const ROTATION_DURATION = 350;
+const ROTATION_DURATION = 450;
 const STATE_COMMIT_DELAY = 16;
 
 export default function RubiksGame({ onClose }) {
