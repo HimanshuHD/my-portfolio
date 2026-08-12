@@ -20,7 +20,6 @@ export default function RubiksGame({ onClose }) {
   const [activeMove, setActiveMove] = useState(null);
   const [moveDuration, setMoveDuration] = useState(ROTATION_DURATION);
   const cubeRef = useRef(cube);
-  const activeMoveRef = useRef(null);
   const animationIdRef = useRef(0);
   const queueRef = useRef([]);
   const transitionTimerRef = useRef(null);
@@ -35,7 +34,6 @@ export default function RubiksGame({ onClose }) {
 
     return () => {
       animationIdRef.current += 1;
-      activeMoveRef.current = null;
       queueRef.current = [];
       if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
       document.body.style.overflow = previousOverflow;
@@ -50,49 +48,45 @@ export default function RubiksGame({ onClose }) {
   }, [startedAt, cube]);
 
   const startSequence = (sequence, baseCube, duration = ROTATION_DURATION, countMoves = false) => {
-    if (!sequence.length || activeMoveRef.current) return false;
+    if (!sequence.length || activeMove) return false;
 
     const sequenceId = animationIdRef.current + 1;
     animationIdRef.current = sequenceId;
     cubeRef.current = baseCube;
     queueRef.current = sequence.slice(1).map((move) => ({ move, countMoves }));
-
-    const nextMove = { move: sequence[0], id: sequenceId, countMoves };
-    activeMoveRef.current = nextMove;
     setMoveDuration(duration);
-    setActiveMove(nextMove);
+    setActiveMove({ move: sequence[0], id: sequenceId, countMoves });
     return true;
   };
 
   const finishAnimation = (animationId) => {
-    const currentMove = activeMoveRef.current;
-    if (!currentMove || animationId !== currentMove.id) return;
+    if (!activeMove || animationId !== activeMove.id) return;
 
-    const nextCube = applyMove(cubeRef.current, currentMove.move);
+    const nextCube = applyMove(cubeRef.current, activeMove.move);
     cubeRef.current = nextCube;
     setCube(nextCube);
-    if (currentMove.countMoves) setMoves((count) => count + 1);
+    if (activeMove.countMoves) setMoves((count) => count + 1);
 
     const next = queueRef.current.shift();
     if (next) {
       const nextId = animationIdRef.current + 1;
       animationIdRef.current = nextId;
       const nextMove = { move: next.move, id: nextId, countMoves: next.countMoves };
-      activeMoveRef.current = nextMove;
-
       if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
       transitionTimerRef.current = window.setTimeout(() => {
-        if (activeMoveRef.current?.id === nextId) setActiveMove(nextMove);
+        setActiveMove((current) => {
+          if (!current || current.id !== animationId) return current;
+          return nextMove;
+        });
         transitionTimerRef.current = null;
       }, MOVE_TRANSITION_DELAY);
     } else {
-      activeMoveRef.current = null;
       setActiveMove(null);
     }
   };
 
   const scrambleCube = () => {
-    if (activeMoveRef.current) return;
+    if (activeMove) return;
 
     const sequence = createScramble();
     const animationSequence = expandAnimationMoves(sequence);
@@ -100,7 +94,6 @@ export default function RubiksGame({ onClose }) {
 
     animationIdRef.current += 1;
     queueRef.current = [];
-    activeMoveRef.current = null;
     if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
     cubeRef.current = solvedCube;
 
@@ -116,7 +109,6 @@ export default function RubiksGame({ onClose }) {
 
   const resetCube = () => {
     animationIdRef.current += 1;
-    activeMoveRef.current = null;
     queueRef.current = [];
     if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
     const solvedCube = createSolvedCube();
@@ -130,7 +122,7 @@ export default function RubiksGame({ onClose }) {
   };
 
   const handleMove = (move) => {
-    if (activeMoveRef.current || (isSolved(cube) && !startedAt)) return;
+    if (activeMove || (isSolved(cube) && !startedAt)) return;
     const animationSequence = expandAnimationMoves([move]);
     const started = startSequence(animationSequence, cubeRef.current, ROTATION_DURATION, true);
     if (started && !startedAt) setStartedAt(Date.now());
