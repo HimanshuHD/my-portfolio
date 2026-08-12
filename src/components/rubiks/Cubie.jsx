@@ -12,7 +12,7 @@ const FACE_COLORS = {
 
 const STICKER_SIZE = 0.43;
 const STICKER_RADIUS = 0.048;
-const CUBIE_SIZE = 0.57;
+const CUBIE_SIZE = 0.60;
 const CUBIE_SPACING = 0.55;
 const STICKER_OFFSET = CUBIE_SIZE / 2 + 0.0008;
 
