@@ -42,10 +42,10 @@ export default function RubiksGame({ onClose }) {
   }, []);
 
   useEffect(() => {
-    if (!startedAt || isSolved(cube) || activeMove) return undefined;
+    if (!startedAt || isSolved(cube)) return undefined;
     const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 250);
     return () => window.clearInterval(timer);
-  }, [startedAt, cube, activeMove]);
+  }, [startedAt, cube]);
 
   const startSequence = (sequence, baseCube, duration, countMoves = false) => {
     if (!sequence.length || activeMove) return;
