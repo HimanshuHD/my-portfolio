@@ -70,7 +70,6 @@ function AnimatedLayer({ cubies, definition, amount, duration, onComplete }) {
     elapsedRef.current += delta;
     const progress = Math.min(elapsedRef.current / (totalDuration / 1000), 1);
 
-    // Smooth ease-in/ease-out so the layer accelerates and decelerates naturally.
     const eased = progress < 0.5
       ? 4 * progress * progress * progress
       : 1 - Math.pow(-2 * progress + 2, 3) / 2;
@@ -124,7 +123,6 @@ function GameCube({ cube, activeMove, moveDuration, onAnimationComplete }) {
       {staticCubies.map(renderCubie)}
       {activeMove && parsedMove && definition && (
         <AnimatedLayer
-          key={activeMove.id}
           cubies={animatedCubies}
           definition={definition}
           amount={parsedMove.amount}
