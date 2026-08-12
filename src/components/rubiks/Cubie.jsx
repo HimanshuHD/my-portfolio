@@ -11,11 +11,11 @@ const FACE_COLORS = {
 
 const STICKER_SIZE = 0.43;
 const STICKER_RADIUS = 0.048;
-const CUBIE_SIZE = 0.54;
-const CUBIE_GAP = 0.01;
+const CUBIE_SIZE = 0.53;
+const CUBIE_GAP = 0.02;
 const CUBIE_SPACING = CUBIE_SIZE + CUBIE_GAP;
 const STICKER_OFFSET = CUBIE_SIZE / 2 + 0.001;
-const CUBIE_CORNER_RADIUS = 0.008;
+const CUBIE_CORNER_RADIUS = 0.01;
 const CUBIE_CORNER_SEGMENTS = 2;
 
 const stickerGeometry = createRoundedStickerGeometry(STICKER_SIZE, STICKER_RADIUS);
