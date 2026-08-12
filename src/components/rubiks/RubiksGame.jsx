@@ -17,6 +17,7 @@ export default function RubiksGame({ onClose }) {
   const [startedAt, setStartedAt] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [activeMove, setActiveMove] = useState(null);
+  const [pendingMove, setPendingMove] = useState(null);
   const [moveDuration, setMoveDuration] = useState(ROTATION_DURATION);
   const cubeRef = useRef(cube);
   const animationIdRef = useRef(0);
@@ -44,8 +45,20 @@ export default function RubiksGame({ onClose }) {
     return () => window.clearInterval(timer);
   }, [startedAt, cube]);
 
+  // A completed rotation first commits the logical cube state. The next
+  // animation is started from that committed state in a subsequent React
+  // effect, keeping the visual rotation and state transition synchronized.
+  useEffect(() => {
+    if (!pendingMove || activeMove) return;
+
+    const nextId = animationIdRef.current + 1;
+    animationIdRef.current = nextId;
+    setActiveMove({ move: pendingMove.move, id: nextId, countMoves: pendingMove.countMoves });
+    setPendingMove(null);
+  }, [cube, pendingMove, activeMove]);
+
   const startSequence = (sequence, baseCube, duration = ROTATION_DURATION, countMoves = false) => {
-    if (!sequence.length || activeMove) return false;
+    if (!sequence.length || activeMove || pendingMove) return false;
 
     const sequenceId = animationIdRef.current + 1;
     animationIdRef.current = sequenceId;
@@ -65,17 +78,13 @@ export default function RubiksGame({ onClose }) {
     if (activeMove.countMoves) setMoves((count) => count + 1);
 
     const next = queueRef.current.shift();
-    if (next) {
-      const nextId = animationIdRef.current + 1;
-      animationIdRef.current = nextId;
-      setActiveMove({ move: next.move, id: nextId, countMoves: next.countMoves });
-    } else {
-      setActiveMove(null);
-    }
+    setActiveMove(null);
+
+    if (next) setPendingMove(next);
   };
 
   const scrambleCube = () => {
-    if (activeMove) return;
+    if (activeMove || pendingMove) return;
 
     const sequence = createScramble();
     const animationSequence = expandAnimationMoves(sequence);
@@ -85,6 +94,7 @@ export default function RubiksGame({ onClose }) {
     queueRef.current = [];
     cubeRef.current = solvedCube;
 
+    setPendingMove(null);
     setActiveMove(null);
     setCube(solvedCube);
     setScramble(sequence);
@@ -100,6 +110,7 @@ export default function RubiksGame({ onClose }) {
     queueRef.current = [];
     const solvedCube = createSolvedCube();
     cubeRef.current = solvedCube;
+    setPendingMove(null);
     setActiveMove(null);
     setCube(solvedCube);
     setScramble([]);
@@ -109,14 +120,14 @@ export default function RubiksGame({ onClose }) {
   };
 
   const handleMove = (move) => {
-    if (activeMove || (isSolved(cube) && !startedAt)) return;
+    if (activeMove || pendingMove || (isSolved(cube) && !startedAt)) return;
     const animationSequence = expandAnimationMoves([move]);
     const started = startSequence(animationSequence, cubeRef.current, ROTATION_DURATION, true);
     if (started && !startedAt) setStartedAt(Date.now());
   };
 
   const solved = isSolved(cube) && scramble.length > 0;
-  const isAnimating = Boolean(activeMove);
+  const isAnimating = Boolean(activeMove || pendingMove);
   const status = solved ? 'Solved ✓' : isAnimating ? 'Animating…' : 'In progress';
 
   const modal = <div className="rubiks-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
