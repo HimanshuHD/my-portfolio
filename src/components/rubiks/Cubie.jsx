@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three-stdlib';
 
@@ -13,13 +12,12 @@ const FACE_COLORS = {
 
 const STICKER_SIZE = 0.43;
 const STICKER_RADIUS = 0.048;
-const CUBIE_SIZE = 0.55;
+const CUBIE_SIZE = 0.57;
+const CUBIE_SPACING = 0.55;
 const STICKER_OFFSET = CUBIE_SIZE / 2 + 0.0008;
 
-// These resources are immutable and intentionally shared by every cubie/sticker.
-// Previously each Sticker and RoundedBox created its own GPU geometry/material,
-// and moving cubies between the static and animated groups caused those resources
-// to be recreated on every move.
+// Shared immutable resources keep geometry/material counts stable while preserving
+// the rounded cubie and sticker appearance during animation.
 const stickerGeometry = createRoundedStickerGeometry(STICKER_SIZE, STICKER_RADIUS);
 const cubieGeometry = new RoundedBoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE, 0.055, 3);
 const cubieMaterial = new THREE.MeshStandardMaterial({ color: '#111315', roughness: 0.34 });
@@ -85,11 +83,7 @@ function Sticker({ sticker }) {
 export default function Cubie({ position, stickers = [] }) {
   return (
     <group position={position}>
-      <mesh
-        geometry={cubieGeometry}
-        material={cubieMaterial}
-        castShadow
-      />
+      <mesh geometry={cubieGeometry} material={cubieMaterial} castShadow />
       {stickers.map((sticker, index) => (
         <Sticker key={`${sticker.color}-${sticker.normal.join(',')}-${index}`} sticker={sticker} />
       ))}
@@ -97,4 +91,4 @@ export default function Cubie({ position, stickers = [] }) {
   );
 }
 
-export { CUBIE_SIZE };
+export { CUBIE_SIZE, CUBIE_SPACING };
