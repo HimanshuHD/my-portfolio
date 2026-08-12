@@ -1,4 +1,6 @@
-import { applyQuarterTurn } from './CubeState';
+import { applyQuarterTurn, MOVE_DEFINITIONS } from './CubeState';
+
+export { MOVE_DEFINITIONS };
 
 export const MOVE_NAMES = ['U', 'D', 'L', 'R', 'F', 'B'];
 
