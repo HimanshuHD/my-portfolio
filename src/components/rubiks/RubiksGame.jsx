@@ -4,14 +4,11 @@ import './rubiks.css';
 import RubiksCube3D from './RubiksCube3D';
 import { createSolvedCube } from './CubeState';
 import { applyMove } from './CubeMoves';
-import { createScramble, scrambleToString } from './Scramble';
+import { createScramble, expandAnimationMoves, scrambleToString } from './Scramble';
 import { isSolved } from './SolvedState';
 
 const MOVE_BUTTONS = ['U', "U'", 'U2', 'R', "R'", 'R2', 'F', "F'", 'F2', 'D', "D'", 'D2', 'L', "L'", 'L2', 'B', "B'", 'B2'];
-const MANUAL_MOVE_DURATION = 450;
-const SCRAMBLE_TOTAL_MS = 8500;
-const MIN_SCRAMBLE_MOVE_MS = 180;
-const MAX_SCRAMBLE_MOVE_MS = 500;
+const ROTATION_DURATION = 500;
 
 export default function RubiksGame({ onClose }) {
   const [cube, setCube] = useState(createSolvedCube);
@@ -20,7 +17,7 @@ export default function RubiksGame({ onClose }) {
   const [startedAt, setStartedAt] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [activeMove, setActiveMove] = useState(null);
-  const [moveDuration, setMoveDuration] = useState(MANUAL_MOVE_DURATION);
+  const [moveDuration, setMoveDuration] = useState(ROTATION_DURATION);
   const cubeRef = useRef(cube);
   const animationIdRef = useRef(0);
   const queueRef = useRef([]);
@@ -47,7 +44,7 @@ export default function RubiksGame({ onClose }) {
     return () => window.clearInterval(timer);
   }, [startedAt, cube]);
 
-  const startSequence = (sequence, baseCube, duration, countMoves = false) => {
+  const startSequence = (sequence, baseCube, duration = ROTATION_DURATION, countMoves = false) => {
     if (!sequence.length || activeMove) return;
     const sequenceId = animationIdRef.current + 1;
     animationIdRef.current = sequenceId;
@@ -77,9 +74,9 @@ export default function RubiksGame({ onClose }) {
 
   const scrambleCube = () => {
     if (activeMove) return;
-    const sequence = createScramble(20);
+    const sequence = createScramble();
+    const animationSequence = expandAnimationMoves(sequence);
     const solvedCube = createSolvedCube();
-    const duration = Math.min(MAX_SCRAMBLE_MOVE_MS, Math.max(MIN_SCRAMBLE_MOVE_MS, SCRAMBLE_TOTAL_MS / sequence.length));
     queueRef.current = [];
     cubeRef.current = solvedCube;
     setCube(solvedCube);
@@ -87,7 +84,7 @@ export default function RubiksGame({ onClose }) {
     setMoves(0);
     setElapsed(0);
     setStartedAt(Date.now());
-    startSequence(sequence, solvedCube, duration, false);
+    startSequence(animationSequence, solvedCube, ROTATION_DURATION, false);
   };
 
   const resetCube = () => {
@@ -105,7 +102,8 @@ export default function RubiksGame({ onClose }) {
 
   const handleMove = (move) => {
     if (activeMove || (isSolved(cube) && !startedAt)) return;
-    startSequence([move], cubeRef.current, MANUAL_MOVE_DURATION, true);
+    const animationSequence = expandAnimationMoves([move]);
+    startSequence(animationSequence, cubeRef.current, ROTATION_DURATION, true);
     if (!startedAt) setStartedAt(Date.now());
   };
 
