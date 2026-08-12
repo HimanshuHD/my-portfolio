@@ -13,10 +13,11 @@ const FACE_COLORS = {
 
 const STICKER_SIZE = 0.43;
 const STICKER_RADIUS = 0.018;
-const CUBIE_SIZE = 0.52;
+// Match the visual spacing used by RubiksCube3D so adjacent cubies meet.
+const CUBIE_SIZE = 0.55;
 
-// Keep the sticker on the cubie face with only a tiny rendering epsilon.
-// The sticker itself is a flat mesh, so there is no artificial thickness/gap.
+// Keep the flat sticker essentially flush with the cubie face. The tiny
+// epsilon prevents z-fighting without creating a visible gap.
 const STICKER_OFFSET = CUBIE_SIZE / 2 + 0.0008;
 
 function createRoundedStickerGeometry(size, radius) {
@@ -51,8 +52,6 @@ function Sticker({ sticker }) {
     rotation = [Math.PI / 2, 0, 0];
   } else if (nx) {
     rotation = [0, Math.PI / 2, 0];
-  } else if (nz) {
-    rotation = [0, 0, 0];
   }
 
   return (
