@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './rubiks.css';
 import RubiksCube3D from './RubiksCube3D';
 import { createSolvedCube } from './CubeState';
-import { applyMove, applyMoves } from './CubeMoves';
+import { applyMove } from './CubeMoves';
 import { createScramble, scrambleToString } from './Scramble';
 import { isSolved } from './SolvedState';
 
 const MOVE_BUTTONS = ['U', "U'", 'U2', 'R', "R'", 'R2', 'F', "F'", 'F2', 'D', "D'", 'D2', 'L', "L'", 'L2', 'B', "B'", 'B2'];
+const MANUAL_MOVE_DURATION = 450;
+const SCRAMBLE_TOTAL_MS = 8500;
+const MIN_SCRAMBLE_MOVE_MS = 180;
+const MAX_SCRAMBLE_MOVE_MS = 500;
 
 export default function RubiksGame({ onClose }) {
   const [cube, setCube] = useState(createSolvedCube);
@@ -15,6 +19,11 @@ export default function RubiksGame({ onClose }) {
   const [scramble, setScramble] = useState([]);
   const [startedAt, setStartedAt] = useState(null);
   const [elapsed, setElapsed] = useState(0);
+  const [activeMove, setActiveMove] = useState(null);
+  const [moveDuration, setMoveDuration] = useState(MANUAL_MOVE_DURATION);
+  const cubeRef = useRef(cube);
+  const animationIdRef = useRef(0);
+  const queueRef = useRef([]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -25,27 +34,90 @@ export default function RubiksGame({ onClose }) {
     if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
 
     return () => {
+      animationIdRef.current += 1;
+      queueRef.current = [];
       document.body.style.overflow = previousOverflow;
       document.body.style.paddingRight = previousPaddingRight;
     };
   }, []);
 
   useEffect(() => {
-    if (!startedAt || isSolved(cube)) return undefined;
+    if (!startedAt || isSolved(cube) || activeMove) return undefined;
     const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 250);
     return () => window.clearInterval(timer);
-  }, [startedAt, cube]);
+  }, [startedAt, cube, activeMove]);
 
-  const scrambleCube = () => { const sequence = createScramble(20); setCube(applyMoves(createSolvedCube(), sequence)); setScramble(sequence); setMoves(0); setElapsed(0); setStartedAt(Date.now()); };
-  const resetCube = () => { setCube(createSolvedCube()); setScramble([]); setMoves(0); setElapsed(0); setStartedAt(null); };
-  const handleMove = (move) => { if (isSolved(cube) && !startedAt) return; setCube((current) => applyMove(current, move)); setMoves((count) => count + 1); if (!startedAt) setStartedAt(Date.now()); };
+  const startSequence = (sequence, baseCube, duration, countMoves = false) => {
+    if (!sequence.length || activeMove) return;
+    const sequenceId = animationIdRef.current + 1;
+    animationIdRef.current = sequenceId;
+    cubeRef.current = baseCube;
+    queueRef.current = sequence.slice(1).map((move) => ({ move, countMoves }));
+    setMoveDuration(duration);
+    setActiveMove({ move: sequence[0], id: sequenceId, countMoves });
+  };
+
+  const finishAnimation = (animationId) => {
+    if (!activeMove || animationId !== activeMove.id) return;
+
+    const nextCube = applyMove(cubeRef.current, activeMove.move);
+    cubeRef.current = nextCube;
+    setCube(nextCube);
+    if (activeMove.countMoves) setMoves((count) => count + 1);
+
+    const next = queueRef.current.shift();
+    if (next) {
+      const nextId = animationIdRef.current + 1;
+      animationIdRef.current = nextId;
+      setActiveMove({ move: next.move, id: nextId, countMoves: next.countMoves });
+    } else {
+      setActiveMove(null);
+    }
+  };
+
+  const scrambleCube = () => {
+    if (activeMove) return;
+    const sequence = createScramble(20);
+    const solvedCube = createSolvedCube();
+    const duration = Math.min(MAX_SCRAMBLE_MOVE_MS, Math.max(MIN_SCRAMBLE_MOVE_MS, SCRAMBLE_TOTAL_MS / sequence.length));
+    queueRef.current = [];
+    cubeRef.current = solvedCube;
+    setCube(solvedCube);
+    setScramble(sequence);
+    setMoves(0);
+    setElapsed(0);
+    setStartedAt(Date.now());
+    startSequence(sequence, solvedCube, duration, false);
+  };
+
+  const resetCube = () => {
+    animationIdRef.current += 1;
+    queueRef.current = [];
+    const solvedCube = createSolvedCube();
+    cubeRef.current = solvedCube;
+    setActiveMove(null);
+    setCube(solvedCube);
+    setScramble([]);
+    setMoves(0);
+    setElapsed(0);
+    setStartedAt(null);
+  };
+
+  const handleMove = (move) => {
+    if (activeMove || (isSolved(cube) && !startedAt)) return;
+    startSequence([move], cubeRef.current, MANUAL_MOVE_DURATION, true);
+    if (!startedAt) setStartedAt(Date.now());
+  };
+
   const solved = isSolved(cube) && scramble.length > 0;
+  const isAnimating = Boolean(activeMove);
+  const status = solved ? 'Solved ✓' : isAnimating ? 'Animating…' : 'In progress';
 
   const modal = <div className="rubiks-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
     <section className="rubiks-game-modal" role="dialog" aria-modal="true" aria-labelledby="rubiks-game-title">
       <button className="rubiks-close" type="button" onClick={onClose} aria-label="Close Rubik's Cube game">×</button>
-      <div className="rubiks-game-header"><div><span className="rubiks-kicker">INTERACTIVE MINI GAME</span><h2 id="rubiks-game-title">Solve the Rubik's Cube</h2><p>Scramble it, rotate the faces, and solve it in as few moves as possible.</p></div><div className="rubiks-status">{solved ? 'Solved ✓' : 'In progress'}</div></div>
-      <div className="rubiks-game-layout"><RubiksCube3D cube={cube} /><aside className="rubiks-controls"><div className="rubiks-stats"><div><strong>{moves}</strong><span>Moves</span></div><div><strong>{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</strong><span>Time</span></div></div><div className="rubiks-actions"><button type="button" className="button primary" onClick={scrambleCube}>Scramble</button><button type="button" className="button ghost" onClick={resetCube}>Reset</button></div><div className="rubiks-moves"><span>Face turns</span><div>{MOVE_BUTTONS.map((move) => <button key={move} type="button" onClick={() => handleMove(move)}>{move}</button>)}</div></div>{scramble.length > 0 && <div className="rubiks-scramble"><span>Scramble</span><p>{scrambleToString(scramble)}</p></div>}</aside></div>
+      <div className="rubiks-game-header"><div><span className="rubiks-kicker">INTERACTIVE MINI GAME</span><h2 id="rubiks-game-title">Solve the Rubik's Cube</h2><p>Scramble it, rotate the faces, and solve it in as few moves as possible.</p></div><div className="rubiks-status">{status}</div></div>
+      <div className="rubiks-game-layout"><RubiksCube3D cube={cube} activeMove={activeMove} moveDuration={moveDuration} onAnimationComplete={finishAnimation} /><aside className="rubiks-controls"><div className="rubiks-stats"><div><strong>{moves}</strong><span>Moves</span></div><div><strong>{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</strong><span>Time</span></div></div><div className="rubiks-actions"><button type="button" className="button primary" onClick={scrambleCube} disabled={isAnimating}>Scramble</button><button type="button" className="button ghost" onClick={resetCube}>Reset</button></div><div className="rubiks-moves"><span>Face turns</span><div>{MOVE_BUTTONS.map((move) => <button key={move} type="button" onClick={() => handleMove(move)} disabled={isAnimating}>{move}</button>)}</div></div>{scramble.length > 0 && <div className="rubiks-scramble"><span>Scramble</span><p>{scrambleToString(scramble)}</p></div>}</aside></div>
     </section>
   </div>;
 
