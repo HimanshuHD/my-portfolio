@@ -23,6 +23,7 @@ export default function RubiksGame({ onClose }) {
   const cubeRef = useRef(cube);
   const animationIdRef = useRef(0);
   const queueRef = useRef([]);
+  const transitionFrameRef = useRef(null);
   const commitTimerRef = useRef(null);
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function RubiksGame({ onClose }) {
     return () => {
       animationIdRef.current += 1;
       queueRef.current = [];
+      if (transitionFrameRef.current) window.cancelAnimationFrame(transitionFrameRef.current);
       if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
       document.body.style.overflow = previousOverflow;
       document.body.style.paddingRight = previousPaddingRight;
@@ -48,25 +50,32 @@ export default function RubiksGame({ onClose }) {
     return () => window.clearInterval(timer);
   }, [startedAt, cube]);
 
-  // A completed rotation commits the logical state first. Only after that
-  // committed render has had one frame to settle do we start the next move.
   useEffect(() => {
     if (!pendingMove || activeMove) return undefined;
 
     const pendingId = pendingMove.id;
+    if (transitionFrameRef.current) window.cancelAnimationFrame(transitionFrameRef.current);
     if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
-    commitTimerRef.current = window.setTimeout(() => {
-      commitTimerRef.current = null;
-      setPendingMove((pending) => {
-        if (!pending || pending.id !== pendingId) return pending;
-        const nextId = animationIdRef.current + 1;
-        animationIdRef.current = nextId;
-        setActiveMove({ move: pending.move, id: nextId, countMoves: pending.countMoves });
-        return null;
-      });
-    }, STATE_COMMIT_DELAY);
+
+    transitionFrameRef.current = window.requestAnimationFrame(() => {
+      transitionFrameRef.current = null;
+      commitTimerRef.current = window.setTimeout(() => {
+        commitTimerRef.current = null;
+        setPendingMove((pending) => {
+          if (!pending || pending.id !== pendingId) return pending;
+          const nextId = animationIdRef.current + 1;
+          animationIdRef.current = nextId;
+          setActiveMove({ move: pending.move, id: nextId, countMoves: pending.countMoves });
+          return null;
+        });
+      }, STATE_COMMIT_DELAY);
+    });
 
     return () => {
+      if (transitionFrameRef.current) {
+        window.cancelAnimationFrame(transitionFrameRef.current);
+        transitionFrameRef.current = null;
+      }
       if (commitTimerRef.current) {
         window.clearTimeout(commitTimerRef.current);
         commitTimerRef.current = null;
@@ -114,6 +123,7 @@ export default function RubiksGame({ onClose }) {
     animationIdRef.current += 1;
     queueRef.current = [];
     cubeRef.current = solvedCube;
+    if (transitionFrameRef.current) window.cancelAnimationFrame(transitionFrameRef.current);
     if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
 
     setPendingMove(null);
@@ -130,6 +140,7 @@ export default function RubiksGame({ onClose }) {
   const resetCube = () => {
     animationIdRef.current += 1;
     queueRef.current = [];
+    if (transitionFrameRef.current) window.cancelAnimationFrame(transitionFrameRef.current);
     if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
     const solvedCube = createSolvedCube();
     cubeRef.current = solvedCube;
