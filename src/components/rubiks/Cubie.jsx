@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import * as THREE from 'three';
 import { RoundedBox } from '@react-three/drei';
 
 const FACE_COLORS = {
@@ -10,37 +12,55 @@ const FACE_COLORS = {
 };
 
 const STICKER_SIZE = 0.43;
-const STICKER_THICKNESS = 0.008;
 const STICKER_RADIUS = 0.018;
 const CUBIE_SIZE = 0.52;
 
-// Keep the sticker essentially flush with the cubie face. The tiny epsilon
-// prevents z-fighting without creating a visible gap between the sticker and body.
-const STICKER_OFFSET = CUBIE_SIZE / 2 + STICKER_THICKNESS / 2 + 0.0005;
+// Keep the sticker on the cubie face with only a tiny rendering epsilon.
+// The sticker itself is a flat mesh, so there is no artificial thickness/gap.
+const STICKER_OFFSET = CUBIE_SIZE / 2 + 0.0008;
+
+function createRoundedStickerGeometry(size, radius) {
+  const half = size / 2;
+  const r = Math.min(radius, half);
+  const shape = new THREE.Shape();
+
+  shape.moveTo(-half + r, -half);
+  shape.lineTo(half - r, -half);
+  shape.quadraticCurveTo(half, -half, half, -half + r);
+  shape.lineTo(half, half - r);
+  shape.quadraticCurveTo(half, half, half - r, half);
+  shape.lineTo(-half + r, half);
+  shape.quadraticCurveTo(-half, half, -half, half - r);
+  shape.lineTo(-half, -half + r);
+  shape.quadraticCurveTo(-half, -half, -half + r, -half);
+
+  return new THREE.ShapeGeometry(shape, 8);
+}
 
 function Sticker({ sticker }) {
   const [nx, ny, nz] = sticker.normal;
   const color = FACE_COLORS[sticker.color] || '#ffffff';
+  const geometry = useMemo(
+    () => createRoundedStickerGeometry(STICKER_SIZE, STICKER_RADIUS),
+    [],
+  );
 
-  let args = [STICKER_SIZE, STICKER_THICKNESS, STICKER_SIZE];
   let rotation = [0, 0, 0];
 
   if (ny) {
-    args = [STICKER_SIZE, STICKER_THICKNESS, STICKER_SIZE];
     rotation = [Math.PI / 2, 0, 0];
   } else if (nx) {
-    args = [STICKER_THICKNESS, STICKER_SIZE, STICKER_SIZE];
     rotation = [0, Math.PI / 2, 0];
   } else if (nz) {
-    args = [STICKER_SIZE, STICKER_SIZE, STICKER_THICKNESS];
+    rotation = [0, 0, 0];
   }
 
   return (
-    <RoundedBox
-      args={args}
-      radius={STICKER_RADIUS}
-      smoothness={3}
+    <mesh
+      geometry={geometry}
       position={[nx * STICKER_OFFSET, ny * STICKER_OFFSET, nz * STICKER_OFFSET]}
+      rotation={rotation}
+      renderOrder={1}
     >
       <meshStandardMaterial
         color={color}
@@ -48,8 +68,9 @@ function Sticker({ sticker }) {
         emissiveIntensity={0.08}
         roughness={0.38}
         metalness={0.02}
+        side={THREE.DoubleSide}
       />
-    </RoundedBox>
+    </mesh>
   );
 }
 
