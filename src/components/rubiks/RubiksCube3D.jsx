@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { MOVE_DEFINITIONS, parseMove } from './CubeMoves';
-import Cubie from './Cubie';
+import Cubie, { CUBIE_SPACING } from './Cubie';
 
 const NORMAL_FACE = {
   '0,1,0': 'U',
@@ -13,7 +13,6 @@ const NORMAL_FACE = {
   '0,0,-1': 'B',
 };
 
-const CUBIE_SPACING = 0.55;
 const INITIAL_CUBE_ROTATION = [0.48, -0.68, 0];
 
 function cubieKey(position) {
