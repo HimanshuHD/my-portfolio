@@ -11,13 +11,19 @@ const FACE_COLORS = {
 
 const STICKER_SIZE = 0.43;
 const STICKER_RADIUS = 0.048;
-const CUBIE_SIZE = 0.66;
-const CUBIE_OVERLAP = 0.11;
-const CUBIE_SPACING = CUBIE_SIZE - CUBIE_OVERLAP;
+const CUBIE_SIZE = 0.54;
+const CUBIE_GAP = 0.01;
+const CUBIE_SPACING = CUBIE_SIZE + CUBIE_GAP;
 const STICKER_OFFSET = CUBIE_SIZE / 2 + 0.001;
+const CUBIE_CORNER_RADIUS = 0.008;
+const CUBIE_CORNER_SEGMENTS = 2;
 
 const stickerGeometry = createRoundedStickerGeometry(STICKER_SIZE, STICKER_RADIUS);
-const cubieGeometry = new THREE.BoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE);
+const cubieGeometry = createRoundedBoxGeometry(
+  CUBIE_SIZE,
+  CUBIE_CORNER_RADIUS,
+  CUBIE_CORNER_SEGMENTS,
+);
 const cubieMaterial = new THREE.MeshStandardMaterial({ color: '#111315', roughness: 0.34 });
 const stickerMaterials = Object.fromEntries(
   Object.entries(FACE_COLORS).map(([face, color]) => [
@@ -35,6 +41,34 @@ const stickerMaterials = Object.fromEntries(
     }),
   ]),
 );
+
+function createRoundedBoxGeometry(size, radius, segments) {
+  if (radius <= 0) return new THREE.BoxGeometry(size, size, size);
+
+  const half = size / 2;
+  const shape = new THREE.Shape();
+  const r = Math.min(radius, half);
+  shape.moveTo(-half + r, -half);
+  shape.lineTo(half - r, -half);
+  shape.quadraticCurveTo(half, -half, half, -half + r);
+  shape.lineTo(half, half - r);
+  shape.quadraticCurveTo(half, half, half - r, half);
+  shape.lineTo(-half + r, half);
+  shape.quadraticCurveTo(-half, half, -half, half - r);
+  shape.lineTo(-half, -half + r);
+  shape.quadraticCurveTo(-half, -half, -half + r, -half);
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: size,
+    bevelEnabled: true,
+    bevelSegments: segments,
+    bevelSize: radius,
+    bevelThickness: radius,
+    curveSegments: 4,
+  });
+  geometry.center();
+  return geometry;
+}
 
 function createRoundedStickerGeometry(size, radius) {
   const half = size / 2;
