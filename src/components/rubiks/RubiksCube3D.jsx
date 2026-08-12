@@ -14,6 +14,9 @@ const NORMAL_FACE = {
 };
 
 const CUBIE_SPACING = 0.55;
+// Fixed presentation angle for a newly opened game. User can still rotate the cube
+// after the modal opens; reopening the modal restores this reference orientation.
+const INITIAL_CUBE_ROTATION = [0.48, -0.68, 0];
 
 function cubieKey(position) {
   return position.join(',');
@@ -119,7 +122,7 @@ function GameCube({ cube, activeMove, moveDuration, onAnimationComplete }) {
   );
 
   return (
-    <group rotation={[0.48, -0.68, 0]}>
+    <group rotation={INITIAL_CUBE_ROTATION}>
       {staticCubies.map(renderCubie)}
       {activeMove && parsedMove && definition && (
         <AnimatedLayer
