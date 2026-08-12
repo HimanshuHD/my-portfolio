@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { useEffect, useRef, useState } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { ContactShadows, Html, OrbitControls, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import bookCoverSvg from '../../assets/frontend-architecture-book-cover.svg?raw';
@@ -61,6 +61,8 @@ function Mug() {
 }
 
 function RubiksCube({ onClick }) {
+  const [hovered, setHovered] = useState(false);
+  const cubeRef = useRef();
   const colors = ['#e12d2d', '#f4f0d7', '#f0d329', '#198b49', '#1769aa', '#ef7822'];
   const cubies = [];
   const cubeScale = 0.1725;
@@ -68,9 +70,17 @@ function RubiksCube({ onClick }) {
   const faceSize = 0.124;
   const faceOffset = 0.109;
   const noRaycast = () => null;
+
+  useFrame((_, delta) => {
+    if (!cubeRef.current) return;
+    const targetScale = hovered ? 1.045 : 1;
+    const nextScale = THREE.MathUtils.damp(cubeRef.current.scale.x, targetScale, 8, delta);
+    cubeRef.current.scale.setScalar(nextScale);
+  });
+
   for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) cubies.push({ x, y, z, id: `${x}${y}${z}` });
-  return <group position={[2.6, DESK_TOP + cubieSize / 2 + 0.185, -0.22]} rotation={[0, -0.42, 0]}>
-    <mesh position={[0, 0, 0]} onClick={(event) => { event.stopPropagation(); onClick?.(event); }} onPointerDown={(event) => event.stopPropagation()} visible={false}><boxGeometry args={[cubieSize * 3.2, cubieSize * 3.2, cubieSize * 3.2]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} /></mesh>
+  return <group ref={cubeRef} position={[2.6, DESK_TOP + cubieSize / 2 + 0.185, -0.22]} rotation={[0, -0.42, 0]}>
+    <mesh position={[0, 0, 0]} onClick={(event) => { event.stopPropagation(); onClick?.(event); }} onPointerDown={(event) => event.stopPropagation()} onPointerOver={(event) => { event.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer'; }} onPointerOut={(event) => { event.stopPropagation(); setHovered(false); document.body.style.cursor = ''; }} visible={false}><boxGeometry args={[cubieSize * 3.2, cubieSize * 3.2, cubieSize * 3.2]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} /></mesh>
     <Html position={[-0.06, 0.48, 0]} distanceFactor={6.5} transform={false} zIndexRange={[4, 0]}>
       <div style={{ position: 'relative', width: 170, pointerEvents: 'none', userSelect: 'none' }} aria-hidden="true">
         <div style={{ position: 'absolute', left: 0, top: 0, width: 120, height: 44, border: '1px solid rgba(217,255,84,.75)', borderRadius: 999, background: 'rgba(5,8,11,.88)', boxShadow: '0 0 22px rgba(217,255,84,.12)', color: '#f2f0eb', font: '700 11px DM Mono, monospace', letterSpacing: '.5px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}>CLICK TO PLAY</div>
@@ -78,7 +88,7 @@ function RubiksCube({ onClick }) {
         <div style={{ position: 'absolute', left: 1, top: 93, width: 9, height: 9, border: '1px solid rgba(217,255,84,.9)', borderRadius: '50%', background: 'rgba(217,255,84,.14)', boxShadow: '0 0 12px rgba(217,255,84,.35)' }} />
       </div>
     </Html>
-    {cubies.map(({ x, y, z, id }) => <group key={id} position={[x * cubeScale, y * cubeScale, z * cubeScale]} raycast={noRaycast}><RoundedBox args={[cubieSize, cubieSize, cubieSize]} radius={0.027} smoothness={2} castShadow raycast={noRaycast}><meshStandardMaterial color="#111315" roughness={0.34} /></RoundedBox>{x === 1 && <mesh raycast={noRaycast} position={[faceOffset, 0, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[0]} /></mesh>}{x === -1 && <mesh raycast={noRaycast} position={[-faceOffset, 0, 0]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[3]} /></mesh>}{y === 1 && <mesh raycast={noRaycast} position={[0, faceOffset, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[2]} /></mesh>}{y === -1 && <mesh raycast={noRaycast} position={[0, -faceOffset, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[1]} /></mesh>}{z === 1 && <mesh raycast={noRaycast} position={[0, 0, faceOffset]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[4]} /></mesh>}{z === -1 && <mesh raycast={noRaycast} position={[0, 0, -faceOffset]} rotation={[0, Math.PI, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[5]} /></mesh>}</group>)}</group>;
+    {cubies.map(({ x, y, z, id }) => <group key={id} position={[x * cubeScale, y * cubeScale, z * cubeScale]} raycast={noRaycast}><RoundedBox args={[cubieSize, cubieSize, cubieSize]} radius={0.027} smoothness={2} castShadow raycast={noRaycast}><meshStandardMaterial color="#111315" emissive={hovered ? accent : '#000000'} emissiveIntensity={hovered ? 0.2 : 0} roughness={0.34} /></RoundedBox>{x === 1 && <mesh raycast={noRaycast} position={[faceOffset, 0, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[0]} emissive={colors[0]} emissiveIntensity={hovered ? 0.16 : 0.08} /></mesh>}{x === -1 && <mesh raycast={noRaycast} position={[-faceOffset, 0, 0]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[3]} emissive={colors[3]} emissiveIntensity={hovered ? 0.16 : 0.08} /></mesh>}{y === 1 && <mesh raycast={noRaycast} position={[0, faceOffset, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[2]} emissive={colors[2]} emissiveIntensity={hovered ? 0.16 : 0.08} /></mesh>}{y === -1 && <mesh raycast={noRaycast} position={[0, -faceOffset, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[1]} emissive={colors[1]} emissiveIntensity={hovered ? 0.16 : 0.08} /></mesh>}{z === 1 && <mesh raycast={noRaycast} position={[0, 0, faceOffset]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[4]} emissive={colors[4]} emissiveIntensity={hovered ? 0.16 : 0.08} /></mesh>}{z === -1 && <mesh raycast={noRaycast} position={[0, 0, -faceOffset]} rotation={[0, Math.PI, 0]}><planeGeometry args={[faceSize, faceSize]} /><meshStandardMaterial color={colors[5]} emissive={colors[5]} emissiveIntensity={hovered ? 0.16 : 0.08} /></mesh>}</group>)}</group>;
 }
 
 function Book() {
