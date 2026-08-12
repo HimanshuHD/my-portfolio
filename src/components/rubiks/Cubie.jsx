@@ -12,7 +12,7 @@ const FACE_COLORS = {
 };
 
 const STICKER_SIZE = 0.43;
-const STICKER_RADIUS = 0.032;
+const STICKER_RADIUS = 0.048;
 // Match the visual spacing used by RubiksCube3D so adjacent cubies meet.
 const CUBIE_SIZE = 0.55;
 
