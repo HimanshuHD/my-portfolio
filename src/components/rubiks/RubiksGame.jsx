@@ -9,7 +9,10 @@ import { isSolved } from './SolvedState';
 
 const MOVE_BUTTONS = ['U', "U'", 'U2', 'R', "R'", 'R2', 'F', "F'", 'F2', 'D', "D'", 'D2', 'L', "L'", 'L2', 'B', "B'", 'B2'];
 const ROTATION_DURATION = 480;
-const STATE_COMMIT_DELAY = 20;
+
+// Temporarily disabled while investigating animation timing.
+// Keep these values/code documented here so the transaction-style timing can be restored later.
+// const STATE_COMMIT_DELAY = 20;
 
 export default function RubiksGame({ onClose }) {
   const [cube, setCube] = useState(createSolvedCube);
@@ -18,13 +21,15 @@ export default function RubiksGame({ onClose }) {
   const [startedAt, setStartedAt] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [activeMove, setActiveMove] = useState(null);
-  const [pendingMove, setPendingMove] = useState(null);
+  // Temporarily disabled with the state-commit delay investigation.
+  // const [pendingMove, setPendingMove] = useState(null);
   const [moveDuration, setMoveDuration] = useState(ROTATION_DURATION);
   const cubeRef = useRef(cube);
   const animationIdRef = useRef(0);
   const queueRef = useRef([]);
-  const transitionFrameRef = useRef(null);
-  const commitTimerRef = useRef(null);
+  // Temporarily disabled with the state-commit delay investigation.
+  // const transitionFrameRef = useRef(null);
+  // const commitTimerRef = useRef(null);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -37,54 +42,51 @@ export default function RubiksGame({ onClose }) {
     return () => {
       animationIdRef.current += 1;
       queueRef.current = [];
-      if (transitionFrameRef.current) window.cancelAnimationFrame(transitionFrameRef.current);
-      if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
       document.body.style.overflow = previousOverflow;
       document.body.style.paddingRight = previousPaddingRight;
     };
   }, []);
 
+  // Keep the timer interval tied only to the start time. Re-running this effect on every
+  // cube-state change was resetting the 250ms interval before it could tick, which made
+  // the displayed timer appear to jump after moves.
   useEffect(() => {
     if (!startedAt || isSolved(cube)) return undefined;
-    const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 250);
+
+    const timer = window.setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    }, 250);
+
     return () => window.clearInterval(timer);
-  }, [startedAt, cube]);
+  }, [startedAt, isSolved(cube)]);
 
-  useEffect(() => {
-    if (!pendingMove || activeMove) return undefined;
-
-    const pendingId = pendingMove.id;
-    if (transitionFrameRef.current) window.cancelAnimationFrame(transitionFrameRef.current);
-    if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
-
-    transitionFrameRef.current = window.requestAnimationFrame(() => {
-      transitionFrameRef.current = null;
-      commitTimerRef.current = window.setTimeout(() => {
-        commitTimerRef.current = null;
-        setPendingMove((pending) => {
-          if (!pending || pending.id !== pendingId) return pending;
-          const nextId = animationIdRef.current + 1;
-          animationIdRef.current = nextId;
-          setActiveMove({ move: pending.move, id: nextId, countMoves: pending.countMoves });
-          return null;
-        });
-      }, STATE_COMMIT_DELAY);
-    });
-
-    return () => {
-      if (transitionFrameRef.current) {
-        window.cancelAnimationFrame(transitionFrameRef.current);
-        transitionFrameRef.current = null;
-      }
-      if (commitTimerRef.current) {
-        window.clearTimeout(commitTimerRef.current);
-        commitTimerRef.current = null;
-      }
-    };
-  }, [cube, pendingMove, activeMove]);
+  // Temporarily disabled. This was the requestAnimationFrame + state-commit-delay
+  // experiment that introduced an intentional settling period between moves.
+  // It is kept here for reference and can be restored when we revisit the timing issue.
+  // useEffect(() => {
+  //   if (!pendingMove || activeMove) return undefined;
+  //   const pendingId = pendingMove.id;
+  //   transitionFrameRef.current = window.requestAnimationFrame(() => {
+  //     transitionFrameRef.current = null;
+  //     commitTimerRef.current = window.setTimeout(() => {
+  //       commitTimerRef.current = null;
+  //       setPendingMove((pending) => {
+  //         if (!pending || pending.id !== pendingId) return pending;
+  //         const nextId = animationIdRef.current + 1;
+  //         animationIdRef.current = nextId;
+  //         setActiveMove({ move: pending.move, id: nextId, countMoves: pending.countMoves });
+  //         return null;
+  //       });
+  //     }, STATE_COMMIT_DELAY);
+  //   });
+  //   return () => {
+  //     if (transitionFrameRef.current) window.cancelAnimationFrame(transitionFrameRef.current);
+  //     if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
+  //   };
+  // }, [cube, pendingMove, activeMove]);
 
   const startSequence = (sequence, baseCube, duration = ROTATION_DURATION, countMoves = false) => {
-    if (!sequence.length || activeMove || pendingMove) return false;
+    if (!sequence.length || activeMove) return false;
 
     const sequenceId = animationIdRef.current + 1;
     animationIdRef.current = sequenceId;
@@ -104,17 +106,17 @@ export default function RubiksGame({ onClose }) {
     if (activeMove.countMoves) setMoves((count) => count + 1);
 
     const next = queueRef.current.shift();
-    setActiveMove(null);
-
     if (next) {
       const nextId = animationIdRef.current + 1;
       animationIdRef.current = nextId;
-      setPendingMove({ ...next, id: nextId });
+      setActiveMove({ move: next.move, id: nextId, countMoves: next.countMoves });
+    } else {
+      setActiveMove(null);
     }
   };
 
   const scrambleCube = () => {
-    if (activeMove || pendingMove) return;
+    if (activeMove) return;
 
     const sequence = createScramble();
     const animationSequence = expandAnimationMoves(sequence);
@@ -123,10 +125,6 @@ export default function RubiksGame({ onClose }) {
     animationIdRef.current += 1;
     queueRef.current = [];
     cubeRef.current = solvedCube;
-    if (transitionFrameRef.current) window.cancelAnimationFrame(transitionFrameRef.current);
-    if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
-
-    setPendingMove(null);
     setActiveMove(null);
     setCube(solvedCube);
     setScramble(sequence);
@@ -140,11 +138,8 @@ export default function RubiksGame({ onClose }) {
   const resetCube = () => {
     animationIdRef.current += 1;
     queueRef.current = [];
-    if (transitionFrameRef.current) window.cancelAnimationFrame(transitionFrameRef.current);
-    if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
     const solvedCube = createSolvedCube();
     cubeRef.current = solvedCube;
-    setPendingMove(null);
     setActiveMove(null);
     setCube(solvedCube);
     setScramble([]);
@@ -154,14 +149,14 @@ export default function RubiksGame({ onClose }) {
   };
 
   const handleMove = (move) => {
-    if (activeMove || pendingMove || (isSolved(cube) && !startedAt)) return;
+    if (activeMove || (isSolved(cube) && !startedAt)) return;
     const animationSequence = expandAnimationMoves([move]);
     const started = startSequence(animationSequence, cubeRef.current, ROTATION_DURATION, true);
     if (started && !startedAt) setStartedAt(Date.now());
   };
 
   const solved = isSolved(cube) && scramble.length > 0;
-  const isAnimating = Boolean(activeMove || pendingMove);
+  const isAnimating = Boolean(activeMove);
   const status = solved ? 'Solved ✓' : isAnimating ? 'Animating…' : 'In progress';
 
   const modal = <div className="rubiks-modal-backdrop" role="presentation">
