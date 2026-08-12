@@ -9,6 +9,7 @@ import { isSolved } from './SolvedState';
 
 const MOVE_BUTTONS = ['U', "U'", 'U2', 'R', "R'", 'R2', 'F', "F'", 'F2', 'D', "D'", 'D2', 'L', "L'", 'L2', 'B', "B'", 'B2'];
 const ROTATION_DURATION = 500;
+const STATE_COMMIT_DELAY = 16;
 
 export default function RubiksGame({ onClose }) {
   const [cube, setCube] = useState(createSolvedCube);
@@ -22,6 +23,7 @@ export default function RubiksGame({ onClose }) {
   const cubeRef = useRef(cube);
   const animationIdRef = useRef(0);
   const queueRef = useRef([]);
+  const commitTimerRef = useRef(null);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -34,6 +36,7 @@ export default function RubiksGame({ onClose }) {
     return () => {
       animationIdRef.current += 1;
       queueRef.current = [];
+      if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
       document.body.style.overflow = previousOverflow;
       document.body.style.paddingRight = previousPaddingRight;
     };
@@ -45,16 +48,30 @@ export default function RubiksGame({ onClose }) {
     return () => window.clearInterval(timer);
   }, [startedAt, cube]);
 
-  // A completed rotation first commits the logical cube state. The next
-  // animation is started from that committed state in a subsequent React
-  // effect, keeping the visual rotation and state transition synchronized.
+  // A completed rotation commits the logical state first. Only after that
+  // committed render has had one frame to settle do we start the next move.
   useEffect(() => {
-    if (!pendingMove || activeMove) return;
+    if (!pendingMove || activeMove) return undefined;
 
-    const nextId = animationIdRef.current + 1;
-    animationIdRef.current = nextId;
-    setActiveMove({ move: pendingMove.move, id: nextId, countMoves: pendingMove.countMoves });
-    setPendingMove(null);
+    const pendingId = pendingMove.id;
+    if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
+    commitTimerRef.current = window.setTimeout(() => {
+      commitTimerRef.current = null;
+      setPendingMove((pending) => {
+        if (!pending || pending.id !== pendingId) return pending;
+        const nextId = animationIdRef.current + 1;
+        animationIdRef.current = nextId;
+        setActiveMove({ move: pending.move, id: nextId, countMoves: pending.countMoves });
+        return null;
+      });
+    }, STATE_COMMIT_DELAY);
+
+    return () => {
+      if (commitTimerRef.current) {
+        window.clearTimeout(commitTimerRef.current);
+        commitTimerRef.current = null;
+      }
+    };
   }, [cube, pendingMove, activeMove]);
 
   const startSequence = (sequence, baseCube, duration = ROTATION_DURATION, countMoves = false) => {
@@ -80,7 +97,11 @@ export default function RubiksGame({ onClose }) {
     const next = queueRef.current.shift();
     setActiveMove(null);
 
-    if (next) setPendingMove(next);
+    if (next) {
+      const nextId = animationIdRef.current + 1;
+      animationIdRef.current = nextId;
+      setPendingMove({ ...next, id: nextId });
+    }
   };
 
   const scrambleCube = () => {
@@ -93,6 +114,7 @@ export default function RubiksGame({ onClose }) {
     animationIdRef.current += 1;
     queueRef.current = [];
     cubeRef.current = solvedCube;
+    if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
 
     setPendingMove(null);
     setActiveMove(null);
@@ -108,6 +130,7 @@ export default function RubiksGame({ onClose }) {
   const resetCube = () => {
     animationIdRef.current += 1;
     queueRef.current = [];
+    if (commitTimerRef.current) window.clearTimeout(commitTimerRef.current);
     const solvedCube = createSolvedCube();
     cubeRef.current = solvedCube;
     setPendingMove(null);
