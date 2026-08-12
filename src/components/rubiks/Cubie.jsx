@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { RoundedBox } from '@react-three/drei';
+import { RoundedBoxGeometry } from 'three-stdlib';
 
 const FACE_COLORS = {
   U: '#f4f0d7',
@@ -13,12 +13,33 @@ const FACE_COLORS = {
 
 const STICKER_SIZE = 0.43;
 const STICKER_RADIUS = 0.048;
-// Match the visual spacing used by RubiksCube3D so adjacent cubies meet.
 const CUBIE_SIZE = 0.55;
-
-// Keep the flat sticker essentially flush with the cubie face. The tiny
-// epsilon prevents z-fighting without creating a visible gap.
 const STICKER_OFFSET = CUBIE_SIZE / 2 + 0.0008;
+
+// These resources are immutable and intentionally shared by every cubie/sticker.
+// Previously each Sticker and RoundedBox created its own GPU geometry/material,
+// and moving cubies between the static and animated groups caused those resources
+// to be recreated on every move.
+const stickerGeometry = createRoundedStickerGeometry(STICKER_SIZE, STICKER_RADIUS);
+const cubieGeometry = new RoundedBoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE, 0.055, 3);
+const cubieMaterial = new THREE.MeshStandardMaterial({ color: '#111315', roughness: 0.34 });
+
+const stickerMaterials = Object.fromEntries(
+  Object.entries(FACE_COLORS).map(([face, color]) => [
+    face,
+    new THREE.MeshStandardMaterial({
+      color,
+      emissive: color,
+      emissiveIntensity: 0.08,
+      roughness: 0.38,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    }),
+  ]),
+);
 
 function createRoundedStickerGeometry(size, radius) {
   const half = size / 2;
@@ -40,11 +61,7 @@ function createRoundedStickerGeometry(size, radius) {
 
 function Sticker({ sticker }) {
   const [nx, ny, nz] = sticker.normal;
-  const color = FACE_COLORS[sticker.color] || '#ffffff';
-  const geometry = useMemo(
-    () => createRoundedStickerGeometry(STICKER_SIZE, STICKER_RADIUS),
-    [],
-  );
+  const material = stickerMaterials[sticker.color] || stickerMaterials.U;
 
   let rotation = [0, 0, 0];
 
@@ -56,37 +73,23 @@ function Sticker({ sticker }) {
 
   return (
     <mesh
-      geometry={geometry}
+      geometry={stickerGeometry}
+      material={material}
       position={[nx * STICKER_OFFSET, ny * STICKER_OFFSET, nz * STICKER_OFFSET]}
       rotation={rotation}
       renderOrder={1}
-    >
-      <meshStandardMaterial
-        color={color}
-        emissive={color}
-        emissiveIntensity={0.08}
-        roughness={0.38}
-        metalness={0.02}
-        side={THREE.DoubleSide}
-        polygonOffset
-        polygonOffsetFactor={-1}
-        polygonOffsetUnits={-1}
-      />
-    </mesh>
+    />
   );
 }
 
 export default function Cubie({ position, stickers = [] }) {
   return (
     <group position={position}>
-      <RoundedBox
-        args={[CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE]}
-        radius={0.055}
-        smoothness={3}
+      <mesh
+        geometry={cubieGeometry}
+        material={cubieMaterial}
         castShadow
-      >
-        <meshStandardMaterial color="#111315" roughness={0.34} />
-      </RoundedBox>
+      />
       {stickers.map((sticker, index) => (
         <Sticker key={`${sticker.color}-${sticker.normal.join(',')}-${index}`} sticker={sticker} />
       ))}
