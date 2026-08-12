@@ -107,7 +107,7 @@ function Sticker({ sticker }) {
 export default function Cubie({ position, stickers = [] }) {
   return (
     <group position={position}>
-      <mesh geometry={cubieGeometry} material={cubieMaterial} castShadow />
+      <mesh geometry={cubieGeometry} material={cubieMaterial} />
       {stickers.map((sticker, index) => (
         <Sticker key={`${sticker.color}-${sticker.normal.join(',')}-${index}`} sticker={sticker} />
       ))}
