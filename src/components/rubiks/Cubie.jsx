@@ -13,7 +13,8 @@ const FACE_COLORS = {
 const STICKER_SIZE = 0.43;
 const STICKER_RADIUS = 0.048;
 const CUBIE_SIZE = 0.60;
-const CUBIE_SPACING = 0.55;
+const CUBIE_OVERLAP = 0.05;
+const CUBIE_SPACING = CUBIE_SIZE - CUBIE_OVERLAP;
 const STICKER_OFFSET = CUBIE_SIZE / 2 + 0.0008;
 
 // Shared immutable resources keep geometry/material counts stable while preserving
