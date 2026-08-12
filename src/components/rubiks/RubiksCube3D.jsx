@@ -75,7 +75,7 @@ function GameCube({ cube, activeMove, moveDuration, onAnimationComplete }) {
   return <group rotation={[0.48, -0.68, 0]}>
     <RoundedBox args={[CUBE_SIZE, CUBE_SIZE, CUBE_SIZE]} radius={0.08} smoothness={4} castShadow><meshStandardMaterial color="#111315" roughness={0.34} /></RoundedBox>
     {staticStickers.map((sticker, index) => <Sticker key={`static-${index}`} sticker={sticker} />)}
-    {activeMove && parsedMove && <AnimatedLayer stickers={animatedStickers} definition={MOVE_DEFINITIONS[parsedMove.face]} amount={parsedMove.amount} duration={moveDuration} onComplete={() => onAnimationComplete?.(activeMove.id)} />}
+    {activeMove && parsedMove && <AnimatedLayer key={activeMove.id} stickers={animatedStickers} definition={MOVE_DEFINITIONS[parsedMove.face]} amount={parsedMove.amount} duration={moveDuration} onComplete={() => onAnimationComplete?.(activeMove.id)} />}
   </group>;
 }
 
