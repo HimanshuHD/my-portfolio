@@ -123,6 +123,7 @@ function GameCube({ cube, activeMove, moveDuration, onAnimationComplete }) {
       {staticCubies.map(renderCubie)}
       {activeMove && parsedMove && definition && (
         <AnimatedLayer
+          key={activeMove.id}
           cubies={animatedCubies}
           definition={definition}
           amount={parsedMove.amount}
