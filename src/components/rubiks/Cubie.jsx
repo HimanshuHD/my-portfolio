@@ -75,6 +75,7 @@ function Sticker({ sticker, onPointerDown }) {
       renderOrder={1}
       onPointerDown={(event) => {
         event.stopPropagation();
+        event.nativeEvent?.stopImmediatePropagation?.();
         onPointerDown?.(event, sticker);
       }}
     />

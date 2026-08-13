@@ -19,6 +19,7 @@ export default function RubiksGame({ onClose }) {
   const [activeMove, setActiveMove] = useState(null);
   const [moveDuration, setMoveDuration] = useState(ROTATION_DURATION);
   const [performanceStats, setPerformanceStats] = useState(null);
+  const [isScrambling, setIsScrambling] = useState(false);
   const cubeRef = useRef(cube);
   const animationIdRef = useRef(0);
   const queueRef = useRef([]);
@@ -76,11 +77,12 @@ export default function RubiksGame({ onClose }) {
       setActiveMove({ move: next.move, id: nextId, countMoves: next.countMoves });
     } else {
       setActiveMove(null);
+      if (!activeMove.countMoves) setIsScrambling(false);
     }
   };
 
   const scrambleCube = () => {
-    if (activeMove) return;
+    if (activeMove || isScrambling) return;
 
     const sequence = createScramble();
     const animationSequence = expandAnimationMoves(sequence);
@@ -95,6 +97,7 @@ export default function RubiksGame({ onClose }) {
     setMoves(0);
     setElapsed(0);
     setStartedAt(null);
+    setIsScrambling(true);
 
     startSequence(animationSequence, solvedCube, ROTATION_DURATION, false);
   };
@@ -110,10 +113,11 @@ export default function RubiksGame({ onClose }) {
     setMoves(0);
     setElapsed(0);
     setStartedAt(null);
+    setIsScrambling(false);
   };
 
   const handleMove = (move) => {
-    if (activeMove || (isSolved(cube) && !startedAt)) return;
+    if (activeMove || isScrambling || (isSolved(cube) && !startedAt)) return;
     const animationSequence = expandAnimationMoves([move]);
     const started = startSequence(animationSequence, cubeRef.current, ROTATION_DURATION, true);
     if (started && !startedAt) setStartedAt(Date.now());
@@ -132,7 +136,7 @@ export default function RubiksGame({ onClose }) {
       <div className="rubiks-game-header"><div><span className="rubiks-kicker">INTERACTIVE MINI GAME</span><h2 id="rubiks-game-title">Solve the Rubik's Cube</h2><p>Scramble it, rotate the faces, and solve it in as few moves as possible.</p></div><div className="rubiks-status">{status}</div></div>
       <div className="rubiks-game-layout">
         <div className="rubiks-cube-stage">
-          <RubiksCube3D cube={cube} activeMove={activeMove} moveDuration={moveDuration} onAnimationComplete={finishAnimation} onFaceMove={handleMove} onPerformance={setPerformanceStats} />
+          <RubiksCube3D cube={cube} activeMove={activeMove} moveDuration={moveDuration} onAnimationComplete={finishAnimation} onFaceMove={handleMove} onPerformance={setPerformanceStats} interactionDisabled={isScrambling} />
           {solved && <div className="rubiks-solved-celebration" aria-live="polite"><span className="celebration-particle particle-1" /><span className="celebration-particle particle-2" /><span className="celebration-particle particle-3" /><span className="celebration-particle particle-4" /><span className="celebration-particle particle-5" /><span className="celebration-particle particle-6" /><div className="rubiks-solved-badge">SOLVED! ✦</div></div>}
           <div className="rubiks-performance-panel" aria-label="Rubik's Cube performance diagnostics">
             <div className="rubiks-performance-title"><span>PERFORMANCE</span><small>live · 500ms sample</small></div>
@@ -146,7 +150,7 @@ export default function RubiksGame({ onClose }) {
             </div>
           </div>
         </div>
-        <aside className="rubiks-controls"><div className="rubiks-stats"><div><strong>{moves}</strong><span>Moves</span></div><div><strong>{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</strong><span>Time</span></div></div><div className="rubiks-actions"><button type="button" className="button primary" onClick={scrambleCube} disabled={isAnimating}>Scramble</button><button type="button" className="button ghost" onClick={resetCube}>Reset</button></div><div className="rubiks-moves"><span>Face turns</span><div>{MOVE_BUTTONS.map((move) => <button key={move} type="button" onClick={() => handleMove(move)} disabled={isAnimating}>{move}</button>)}</div></div>{scramble.length > 0 && <div className="rubiks-scramble"><span>Scramble</span><p>{scrambleToString(scramble)}</p></div>}</aside>
+        <aside className="rubiks-controls"><div className="rubiks-stats"><div><strong>{moves}</strong><span>Moves</span></div><div><strong>{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</strong><span>Time</span></div></div><div className="rubiks-actions"><button type="button" className="button primary" onClick={scrambleCube} disabled={isAnimating || isScrambling}>Scramble</button><button type="button" className="button ghost" onClick={resetCube}>Reset</button></div><div className="rubiks-moves"><span>Face turns</span><div>{MOVE_BUTTONS.map((move) => <button key={move} type="button" onClick={() => handleMove(move)} disabled={isAnimating || isScrambling}>{move}</button>)}</div></div>{scramble.length > 0 && <div className="rubiks-scramble"><span>Scramble</span><p>{scrambleToString(scramble)}</p></div>}</aside>
       </div>
     </section>
   </div>;
