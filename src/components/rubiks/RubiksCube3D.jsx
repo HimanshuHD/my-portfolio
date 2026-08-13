@@ -185,8 +185,28 @@ function GameCube({ cube, activeMove, moveDuration, onAnimationComplete, onStick
   );
 }
 
-function FaceDragHandler({ groupRef, onFaceMove, disabled }) {
+function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef }) {
   const dragRef = useRef(null);
+
+  const handleStickerPointerDown = (event, sticker) => {
+    if (disabled) return;
+
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      normal: sticker.normal.slice(),
+      camera: event.camera,
+      triggered: false,
+    };
+  };
+
+  useEffect(() => {
+    handlerRef.current = handleStickerPointerDown;
+    return () => {
+      if (handlerRef.current === handleStickerPointerDown) handlerRef.current = null;
+    };
+  }, [disabled, handlerRef]);
 
   useEffect(() => {
     const handlePointerMove = (event) => {
@@ -195,8 +215,7 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled }) {
 
       const dx = event.clientX - drag.startX;
       const dy = event.clientY - drag.startY;
-      const distance = Math.hypot(dx, dy);
-      if (distance < FACE_DRAG_THRESHOLD) return;
+      if (Math.hypot(dx, dy) < FACE_DRAG_THRESHOLD) return;
 
       const face = NORMAL_FACE[drag.normal.join(',')];
       const basis = FACE_DRAG_BASIS[face];
@@ -205,20 +224,13 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled }) {
       const quaternion = groupRef.current.getWorldQuaternion(new THREE.Quaternion());
       const rightWorld = new THREE.Vector3(...basis.right).applyQuaternion(quaternion);
       const upWorld = new THREE.Vector3(...basis.up).applyQuaternion(quaternion);
-
       const origin = groupRef.current.getWorldPosition(new THREE.Vector3());
+
+      const originPoint = origin.clone().project(drag.camera);
       const rightPoint = origin.clone().add(rightWorld).project(drag.camera);
       const upPoint = origin.clone().add(upWorld).project(drag.camera);
-      const originPoint = origin.clone().project(drag.camera);
-
-      const rightScreen = new THREE.Vector2(
-        rightPoint.x - originPoint.x,
-        rightPoint.y - originPoint.y,
-      );
-      const upScreen = new THREE.Vector2(
-        upPoint.x - originPoint.x,
-        upPoint.y - originPoint.y,
-      );
+      const rightScreen = new THREE.Vector2(rightPoint.x - originPoint.x, rightPoint.y - originPoint.y);
+      const upScreen = new THREE.Vector2(upPoint.x - originPoint.x, upPoint.y - originPoint.y);
       const dragScreen = new THREE.Vector2(dx, -dy);
 
       if (rightScreen.lengthSq() < 1e-8 || upScreen.lengthSq() < 1e-8) return;
@@ -232,9 +244,9 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled }) {
         ? dragScreen.dot(rightScreen) > 0
         : dragScreen.dot(upScreen) > 0;
 
-      const move = `${face}${clockwise ? '' : "'"}`;
       drag.triggered = true;
-      onFaceMove?.(move);
+      dragRef.current = null;
+      onFaceMove?.(`${face}${clockwise ? '' : "'"}`);
     };
 
     const handlePointerUp = (event) => {
@@ -252,23 +264,12 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled }) {
     };
   }, [disabled, groupRef, onFaceMove]);
 
-  const handleStickerPointerDown = (event, sticker) => {
-    if (disabled) return;
-    dragRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      normal: sticker.normal.slice(),
-      camera: event.camera,
-      triggered: false,
-    };
-  };
-
   return null;
 }
 
 export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onAnimationComplete, onFaceMove, onPerformance }) {
   const cubeGroupRef = useRef();
+  const faceDragHandlerRef = useRef(null);
 
   return (
     <div className="rubiks-game-canvas">
@@ -277,6 +278,7 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
         <PerformanceSampler onPerformance={onPerformance} />
         <FaceDragHandler
           groupRef={cubeGroupRef}
+          handlerRef={faceDragHandlerRef}
           onFaceMove={onFaceMove}
           disabled={Boolean(activeMove)}
         />
@@ -285,7 +287,7 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
           activeMove={activeMove}
           moveDuration={moveDuration}
           onAnimationComplete={onAnimationComplete}
-          onStickerPointerDown={undefined}
+          onStickerPointerDown={(event, sticker) => faceDragHandlerRef.current?.(event, sticker)}
           groupRef={cubeGroupRef}
         />
         <OrbitControls
