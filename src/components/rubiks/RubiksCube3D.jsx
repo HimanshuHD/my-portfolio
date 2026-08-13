@@ -176,7 +176,7 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
     <div className="rubiks-game-canvas">
       <Canvas camera={{ position: [3.5, 3.1, 4.4], fov: 42 }} shadows>
         <ambientLight intensity={1.5} />
-        <directionalLight position={[4, 6, 5]} intensity={2.4} castShadow />
+        {/* <directionalLight position={[4, 6, 5]} intensity={2.4} castShadow /> */}
         <PerformanceSampler onPerformance={onPerformance} />
         <GameCube
           cube={cube}
