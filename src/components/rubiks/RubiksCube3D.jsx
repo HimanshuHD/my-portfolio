@@ -185,7 +185,7 @@ function GameCube({ cube, activeMove, moveDuration, onAnimationComplete, onStick
   );
 }
 
-function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsRef }) {
+function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, cancelRef, controlsRef }) {
   const dragRef = useRef(null);
 
   const releaseControls = () => {
@@ -214,11 +214,14 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsR
 
   useEffect(() => {
     handlerRef.current = handleStickerPointerDown;
+    cancelRef.current = cancelDrag;
+
     return () => {
       if (handlerRef.current === handleStickerPointerDown) handlerRef.current = null;
+      if (cancelRef.current === cancelDrag) cancelRef.current = null;
       cancelDrag();
     };
-  }, [disabled, handlerRef, controlsRef]);
+  }, [disabled, handlerRef, cancelRef, controlsRef]);
 
   useEffect(() => {
     const handlePointerMove = (event) => {
@@ -297,6 +300,7 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsR
 export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onAnimationComplete, onFaceMove, onPerformance, interactionDisabled = false }) {
   const cubeGroupRef = useRef();
   const faceDragHandlerRef = useRef(null);
+  const faceDragCancelRef = useRef(null);
   const controlsRef = useRef();
   const canvasContainerRef = useRef(null);
   const faceDragDisabled = interactionDisabled || Boolean(activeMove);
@@ -306,10 +310,10 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
     if (!element) return undefined;
 
     const cancelSceneInteraction = () => {
+      faceDragCancelRef.current?.();
       if (controlsRef.current) {
         controlsRef.current.enabled = !interactionDisabled && !activeMove;
       }
-      faceDragHandlerRef.current?.cancel?.();
     };
 
     element.addEventListener('pointerleave', cancelSceneInteraction);
@@ -318,6 +322,7 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
     return () => {
       element.removeEventListener('pointerleave', cancelSceneInteraction);
       element.removeEventListener('lostpointercapture', cancelSceneInteraction);
+      cancelSceneInteraction();
     };
   }, [interactionDisabled, activeMove]);
 
@@ -329,6 +334,7 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
         <FaceDragHandler
           groupRef={cubeGroupRef}
           handlerRef={faceDragHandlerRef}
+          cancelRef={faceDragCancelRef}
           controlsRef={controlsRef}
           onFaceMove={onFaceMove}
           disabled={faceDragDisabled}
