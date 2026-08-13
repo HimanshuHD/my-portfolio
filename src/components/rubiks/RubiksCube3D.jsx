@@ -192,6 +192,11 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsR
     if (controlsRef.current) controlsRef.current.enabled = true;
   };
 
+  const cancelDrag = () => {
+    dragRef.current = null;
+    releaseControls();
+  };
+
   const handleStickerPointerDown = (event, sticker) => {
     if (disabled) return;
 
@@ -211,8 +216,7 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsR
     handlerRef.current = handleStickerPointerDown;
     return () => {
       if (handlerRef.current === handleStickerPointerDown) handlerRef.current = null;
-      dragRef.current = null;
-      releaseControls();
+      cancelDrag();
     };
   }, [disabled, handlerRef, controlsRef]);
 
@@ -259,20 +263,31 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsR
     };
 
     const handlePointerUp = (event) => {
-      if (dragRef.current?.pointerId === event.pointerId) {
-        dragRef.current = null;
-        releaseControls();
-      }
+      if (dragRef.current?.pointerId === event.pointerId) cancelDrag();
+    };
+
+    const handleWindowBlur = () => cancelDrag();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') cancelDrag();
+    };
+    const handleLostPointerCapture = (event) => {
+      if (dragRef.current?.pointerId === event.pointerId) cancelDrag();
     };
 
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('pointercancel', handlePointerUp);
+    window.addEventListener('blur', handleWindowBlur);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('lostpointercapture', handleLostPointerCapture);
 
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
+      window.removeEventListener('blur', handleWindowBlur);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('lostpointercapture', handleLostPointerCapture);
     };
   }, [disabled, groupRef, onFaceMove, controlsRef]);
 
@@ -283,10 +298,31 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
   const cubeGroupRef = useRef();
   const faceDragHandlerRef = useRef(null);
   const controlsRef = useRef();
+  const canvasContainerRef = useRef(null);
   const faceDragDisabled = interactionDisabled || Boolean(activeMove);
 
+  useEffect(() => {
+    const element = canvasContainerRef.current;
+    if (!element) return undefined;
+
+    const cancelSceneInteraction = () => {
+      if (controlsRef.current) {
+        controlsRef.current.enabled = !interactionDisabled && !activeMove;
+      }
+      faceDragHandlerRef.current?.cancel?.();
+    };
+
+    element.addEventListener('pointerleave', cancelSceneInteraction);
+    element.addEventListener('lostpointercapture', cancelSceneInteraction);
+
+    return () => {
+      element.removeEventListener('pointerleave', cancelSceneInteraction);
+      element.removeEventListener('lostpointercapture', cancelSceneInteraction);
+    };
+  }, [interactionDisabled, activeMove]);
+
   return (
-    <div className="rubiks-game-canvas">
+    <div ref={canvasContainerRef} className="rubiks-game-canvas">
       <Canvas camera={{ position: [3.5, 3.1, 4.4], fov: 42 }} shadows>
         <ambientLight intensity={1.5} />
         <PerformanceSampler onPerformance={onPerformance} />
