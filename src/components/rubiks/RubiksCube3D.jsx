@@ -185,11 +185,17 @@ function GameCube({ cube, activeMove, moveDuration, onAnimationComplete, onStick
   );
 }
 
-function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef }) {
+function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsRef }) {
   const dragRef = useRef(null);
+
+  const releaseControls = () => {
+    if (controlsRef.current) controlsRef.current.enabled = true;
+  };
 
   const handleStickerPointerDown = (event, sticker) => {
     if (disabled) return;
+
+    if (controlsRef.current) controlsRef.current.enabled = false;
 
     dragRef.current = {
       pointerId: event.pointerId,
@@ -205,8 +211,10 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef }) {
     handlerRef.current = handleStickerPointerDown;
     return () => {
       if (handlerRef.current === handleStickerPointerDown) handlerRef.current = null;
+      dragRef.current = null;
+      releaseControls();
     };
-  }, [disabled, handlerRef]);
+  }, [disabled, handlerRef, controlsRef]);
 
   useEffect(() => {
     const handlePointerMove = (event) => {
@@ -246,11 +254,15 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef }) {
 
       drag.triggered = true;
       dragRef.current = null;
+      releaseControls();
       onFaceMove?.(`${face}${clockwise ? '' : "'"}`);
     };
 
     const handlePointerUp = (event) => {
-      if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+      if (dragRef.current?.pointerId === event.pointerId) {
+        dragRef.current = null;
+        releaseControls();
+      }
     };
 
     window.addEventListener('pointermove', handlePointerMove);
@@ -262,14 +274,16 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef }) {
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [disabled, groupRef, onFaceMove]);
+  }, [disabled, groupRef, onFaceMove, controlsRef]);
 
   return null;
 }
 
-export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onAnimationComplete, onFaceMove, onPerformance }) {
+export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onAnimationComplete, onFaceMove, onPerformance, interactionDisabled = false }) {
   const cubeGroupRef = useRef();
   const faceDragHandlerRef = useRef(null);
+  const controlsRef = useRef();
+  const faceDragDisabled = interactionDisabled || Boolean(activeMove);
 
   return (
     <div className="rubiks-game-canvas">
@@ -279,8 +293,9 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
         <FaceDragHandler
           groupRef={cubeGroupRef}
           handlerRef={faceDragHandlerRef}
+          controlsRef={controlsRef}
           onFaceMove={onFaceMove}
-          disabled={Boolean(activeMove)}
+          disabled={faceDragDisabled}
         />
         <GameCube
           cube={cube}
@@ -291,6 +306,7 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
           groupRef={cubeGroupRef}
         />
         <OrbitControls
+          ref={controlsRef}
           enablePan={false}
           enableDamping
           dampingFactor={0.08}
@@ -298,6 +314,7 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
           zoomSpeed={0.8}
           minDistance={3.5}
           maxDistance={7}
+          enabled={!interactionDisabled && !activeMove}
         />
       </Canvas>
     </div>
