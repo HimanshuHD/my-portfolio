@@ -13,7 +13,7 @@ const NORMAL_FACE = {
   '0,0,-1': 'B',
 };
 
-const INITIAL_CUBE_ROTATION = [0.48, -0.68, 0];
+const INITIAL_CUBE_ROTATION = [-0.6, 1.4, 2.1];
 
 function cubieKey(position) {
   return position.join(',');
