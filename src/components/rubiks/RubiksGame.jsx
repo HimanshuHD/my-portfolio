@@ -132,7 +132,7 @@ export default function RubiksGame({ onClose }) {
       <div className="rubiks-game-header"><div><span className="rubiks-kicker">INTERACTIVE MINI GAME</span><h2 id="rubiks-game-title">Solve the Rubik's Cube</h2><p>Scramble it, rotate the faces, and solve it in as few moves as possible.</p></div><div className="rubiks-status">{status}</div></div>
       <div className="rubiks-game-layout">
         <div className="rubiks-cube-stage">
-          <RubiksCube3D cube={cube} activeMove={activeMove} moveDuration={moveDuration} onAnimationComplete={finishAnimation} onPerformance={setPerformanceStats} />
+          <RubiksCube3D cube={cube} activeMove={activeMove} moveDuration={moveDuration} onAnimationComplete={finishAnimation} onFaceMove={handleMove} onPerformance={setPerformanceStats} />
           {solved && <div className="rubiks-solved-celebration" aria-live="polite"><span className="celebration-particle particle-1" /><span className="celebration-particle particle-2" /><span className="celebration-particle particle-3" /><span className="celebration-particle particle-4" /><span className="celebration-particle particle-5" /><span className="celebration-particle particle-6" /><div className="rubiks-solved-badge">SOLVED! ✦</div></div>}
           <div className="rubiks-performance-panel" aria-label="Rubik's Cube performance diagnostics">
             <div className="rubiks-performance-title"><span>PERFORMANCE</span><small>live · 500ms sample</small></div>

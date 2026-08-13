@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { MOVE_DEFINITIONS, parseMove } from './CubeMoves';
@@ -13,6 +14,16 @@ const NORMAL_FACE = {
   '0,0,-1': 'B',
 };
 
+const FACE_DRAG_BASIS = {
+  U: { right: [1, 0, 0], up: [0, 0, 1] },
+  R: { right: [0, 0, -1], up: [0, 1, 0] },
+  F: { right: [1, 0, 0], up: [0, 1, 0] },
+  D: { right: [1, 0, 0], up: [0, 0, -1] },
+  L: { right: [0, 0, 1], up: [0, 1, 0] },
+  B: { right: [-1, 0, 0], up: [0, 1, 0] },
+};
+
+const FACE_DRAG_THRESHOLD = 18;
 const INITIAL_CUBE_ROTATION = [-0.6, 1.4, 2.1];
 
 function cubieKey(position) {
@@ -51,7 +62,7 @@ function isCubieInLayer(cubie, definition) {
   return cubie.position[axisIndex] === definition.layer;
 }
 
-function AnimatedLayer({ cubies, definition, amount, duration, onComplete }) {
+function AnimatedLayer({ cubies, definition, amount, duration, onComplete, onStickerPointerDown }) {
   const layerRef = useRef();
   const elapsedRef = useRef(0);
   const completedRef = useRef(false);
@@ -88,6 +99,7 @@ function AnimatedLayer({ cubies, definition, amount, duration, onComplete }) {
           key={cubie.id}
           position={cubie.position.map((value) => value * CUBIE_SPACING)}
           stickers={cubie.stickers}
+          onStickerPointerDown={onStickerPointerDown}
         />
       ))}
     </group>
@@ -131,7 +143,7 @@ function PerformanceSampler({ onPerformance }) {
   return null;
 }
 
-function GameCube({ cube, activeMove, moveDuration, onAnimationComplete }) {
+function GameCube({ cube, activeMove, moveDuration, onAnimationComplete, onStickerPointerDown, groupRef }) {
   const cubies = useMemo(() => createCubies(cube.stickers), [cube]);
 
   let parsedMove = null;
@@ -151,11 +163,12 @@ function GameCube({ cube, activeMove, moveDuration, onAnimationComplete }) {
       key={cubie.id}
       position={cubie.position.map((value) => value * CUBIE_SPACING)}
       stickers={cubie.stickers}
+      onStickerPointerDown={onStickerPointerDown}
     />
   );
 
   return (
-    <group rotation={INITIAL_CUBE_ROTATION}>
+    <group ref={groupRef} rotation={INITIAL_CUBE_ROTATION}>
       {staticCubies.map(renderCubie)}
       {activeMove && parsedMove && definition && (
         <AnimatedLayer
@@ -165,24 +178,117 @@ function GameCube({ cube, activeMove, moveDuration, onAnimationComplete }) {
           amount={parsedMove.amount}
           duration={moveDuration}
           onComplete={() => onAnimationComplete?.(activeMove.id)}
+          onStickerPointerDown={onStickerPointerDown}
         />
       )}
     </group>
   );
 }
 
-export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onAnimationComplete, onPerformance }) {
+function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef }) {
+  const dragRef = useRef(null);
+
+  const handleStickerPointerDown = (event, sticker) => {
+    if (disabled) return;
+
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      normal: sticker.normal.slice(),
+      camera: event.camera,
+      triggered: false,
+    };
+  };
+
+  useEffect(() => {
+    handlerRef.current = handleStickerPointerDown;
+    return () => {
+      if (handlerRef.current === handleStickerPointerDown) handlerRef.current = null;
+    };
+  }, [disabled, handlerRef]);
+
+  useEffect(() => {
+    const handlePointerMove = (event) => {
+      const drag = dragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId || drag.triggered || disabled) return;
+
+      const dx = event.clientX - drag.startX;
+      const dy = event.clientY - drag.startY;
+      if (Math.hypot(dx, dy) < FACE_DRAG_THRESHOLD) return;
+
+      const face = NORMAL_FACE[drag.normal.join(',')];
+      const basis = FACE_DRAG_BASIS[face];
+      if (!basis || !groupRef.current) return;
+
+      const quaternion = groupRef.current.getWorldQuaternion(new THREE.Quaternion());
+      const rightWorld = new THREE.Vector3(...basis.right).applyQuaternion(quaternion);
+      const upWorld = new THREE.Vector3(...basis.up).applyQuaternion(quaternion);
+      const origin = groupRef.current.getWorldPosition(new THREE.Vector3());
+
+      const originPoint = origin.clone().project(drag.camera);
+      const rightPoint = origin.clone().add(rightWorld).project(drag.camera);
+      const upPoint = origin.clone().add(upWorld).project(drag.camera);
+      const rightScreen = new THREE.Vector2(rightPoint.x - originPoint.x, rightPoint.y - originPoint.y);
+      const upScreen = new THREE.Vector2(upPoint.x - originPoint.x, upPoint.y - originPoint.y);
+      const dragScreen = new THREE.Vector2(dx, -dy);
+
+      if (rightScreen.lengthSq() < 1e-8 || upScreen.lengthSq() < 1e-8) return;
+
+      rightScreen.normalize();
+      upScreen.normalize();
+
+      const horizontalScore = Math.abs(dragScreen.dot(rightScreen));
+      const verticalScore = Math.abs(dragScreen.dot(upScreen));
+      const clockwise = horizontalScore >= verticalScore
+        ? dragScreen.dot(rightScreen) > 0
+        : dragScreen.dot(upScreen) > 0;
+
+      drag.triggered = true;
+      dragRef.current = null;
+      onFaceMove?.(`${face}${clockwise ? '' : "'"}`);
+    };
+
+    const handlePointerUp = (event) => {
+      if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, [disabled, groupRef, onFaceMove]);
+
+  return null;
+}
+
+export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onAnimationComplete, onFaceMove, onPerformance }) {
+  const cubeGroupRef = useRef();
+  const faceDragHandlerRef = useRef(null);
+
   return (
     <div className="rubiks-game-canvas">
       <Canvas camera={{ position: [3.5, 3.1, 4.4], fov: 42 }} shadows>
         <ambientLight intensity={1.5} />
-        {/* <directionalLight position={[4, 6, 5]} intensity={2.4} castShadow /> */}
         <PerformanceSampler onPerformance={onPerformance} />
+        <FaceDragHandler
+          groupRef={cubeGroupRef}
+          handlerRef={faceDragHandlerRef}
+          onFaceMove={onFaceMove}
+          disabled={Boolean(activeMove)}
+        />
         <GameCube
           cube={cube}
           activeMove={activeMove}
           moveDuration={moveDuration}
           onAnimationComplete={onAnimationComplete}
+          onStickerPointerDown={(event, sticker) => faceDragHandlerRef.current?.(event, sticker)}
+          groupRef={cubeGroupRef}
         />
         <OrbitControls
           enablePan={false}

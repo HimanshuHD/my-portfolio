@@ -58,7 +58,7 @@ function createRoundedStickerGeometry(size, radius) {
   return new THREE.ShapeGeometry(shape, 8);
 }
 
-function Sticker({ sticker }) {
+function Sticker({ sticker, onPointerDown }) {
   const [nx, ny, nz] = sticker.normal;
   const material = stickerMaterials[sticker.color] || stickerMaterials.U;
   let rotation = [0, 0, 0];
@@ -73,16 +73,24 @@ function Sticker({ sticker }) {
       position={[nx * STICKER_OFFSET, ny * STICKER_OFFSET, nz * STICKER_OFFSET]}
       rotation={rotation}
       renderOrder={1}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        onPointerDown?.(event, sticker);
+      }}
     />
   );
 }
 
-export default function Cubie({ position, stickers = [] }) {
+export default function Cubie({ position, stickers = [], onStickerPointerDown }) {
   return (
     <group position={position}>
       <mesh geometry={cubieGeometry} material={cubieMaterial} />
       {stickers.map((sticker, index) => (
-        <Sticker key={`${sticker.color}-${sticker.normal.join(',')}-${index}`} sticker={sticker} />
+        <Sticker
+          key={`${sticker.color}-${sticker.normal.join(',')}-${index}`}
+          sticker={sticker}
+          onPointerDown={onStickerPointerDown}
+        />
       ))}
     </group>
   );
