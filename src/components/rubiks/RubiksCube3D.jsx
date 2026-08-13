@@ -184,7 +184,15 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
           moveDuration={moveDuration}
           onAnimationComplete={onAnimationComplete}
         />
-        <OrbitControls enablePan={false} minDistance={3.5} maxDistance={7} />
+        <OrbitControls
+          enablePan={false}
+          enableDamping
+          dampingFactor={0.08}
+          rotateSpeed={0.7}
+          zoomSpeed={0.8}
+          minDistance={3.5}
+          maxDistance={7}
+        />
       </Canvas>
     </div>
   );
