@@ -185,6 +185,49 @@ function GameCube({ cube, activeMove, moveDuration, onAnimationComplete, onStick
   );
 }
 
+function resolveDragTarget(face, position, isHorizontal) {
+  const basis = FACE_DRAG_BASIS[face];
+  if (!basis) return null;
+
+  const right = new THREE.Vector3(...basis.right);
+  const up = new THREE.Vector3(...basis.up);
+  const point = new THREE.Vector3(...position);
+  const column = Math.round(point.dot(right));
+  const row = Math.round(point.dot(up));
+
+  // U/D are already the full outer layer when dragged horizontally.
+  if (isHorizontal && (face === 'U' || face === 'D')) {
+    return face;
+  }
+
+  // For side faces, horizontal drags on the top/bottom rows act on U/D.
+  if (isHorizontal) {
+    if (row > 0) return 'U';
+    if (row < 0) return 'D';
+    // E slice is intentionally deferred to #33 until M/E/S moves exist.
+    return face;
+  }
+
+  // For U/D faces, vertical drags on the front/back columns act on F/B.
+  if (!isHorizontal && (face === 'U' || face === 'D')) {
+    if (column > 0) return face === 'U' ? 'F' : 'B';
+    if (column < 0) return face === 'U' ? 'B' : 'F';
+    // S slice is intentionally deferred to #33.
+    return face;
+  }
+
+  // For F/B faces, vertical drags on the left/right columns act on L/R.
+  if (!isHorizontal && (face === 'F' || face === 'B')) {
+    if (column > 0) return face === 'F' ? 'R' : 'L';
+    if (column < 0) return face === 'F' ? 'L' : 'R';
+    // M slice is intentionally deferred to #33.
+    return face;
+  }
+
+  // For L/R faces, vertical drags stay on the selected outer face.
+  return face;
+}
+
 function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsRef }) {
   const dragRef = useRef(null);
 
@@ -202,6 +245,7 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsR
       startX: event.clientX,
       startY: event.clientY,
       normal: sticker.normal.slice(),
+      position: sticker.position.slice(),
       camera: event.camera,
       triggered: false,
     };
@@ -248,14 +292,38 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsR
 
       const horizontalScore = Math.abs(dragScreen.dot(rightScreen));
       const verticalScore = Math.abs(dragScreen.dot(upScreen));
-      const clockwise = horizontalScore >= verticalScore
-        ? dragScreen.dot(rightScreen) > 0
-        : dragScreen.dot(upScreen) > 0;
+      const isHorizontal = horizontalScore >= verticalScore;
+      const dragDirection = isHorizontal
+        ? dragScreen.dot(rightScreen)
+        : dragScreen.dot(upScreen);
+
+      const targetFace = resolveDragTarget(face, drag.position, isHorizontal);
+      if (!targetFace) return;
+
+      // Re-evaluate direction using the target layer's own face basis. This
+      // prevents a top/bottom row drag from being interpreted as the visible
+      // front/back face rotation.
+      const targetBasis = FACE_DRAG_BASIS[targetFace];
+      const targetRightWorld = new THREE.Vector3(...targetBasis.right).applyQuaternion(quaternion);
+      const targetUpWorld = new THREE.Vector3(...targetBasis.up).applyQuaternion(quaternion);
+      const targetRightPoint = origin.clone().add(targetRightWorld).project(drag.camera);
+      const targetUpPoint = origin.clone().add(targetUpWorld).project(drag.camera);
+      const targetRightScreen = new THREE.Vector2(targetRightPoint.x - originPoint.x, targetRightPoint.y - originPoint.y);
+      const targetUpScreen = new THREE.Vector2(targetUpPoint.x - originPoint.x, targetUpPoint.y - originPoint.y);
+
+      if (targetRightScreen.lengthSq() < 1e-8 || targetUpScreen.lengthSq() < 1e-8) return;
+
+      targetRightScreen.normalize();
+      targetUpScreen.normalize();
+      const targetDirection = isHorizontal
+        ? dragScreen.dot(targetRightScreen)
+        : dragScreen.dot(targetUpScreen);
+      const effectiveDirection = Math.abs(targetDirection) > 0.05 ? targetDirection : dragDirection;
 
       drag.triggered = true;
       dragRef.current = null;
       releaseControls();
-      onFaceMove?.(`${face}${clockwise ? '' : "'"}`);
+      onFaceMove?.(`${targetFace}${effectiveDirection > 0 ? '' : "'"}`);
     };
 
     const handlePointerUp = (event) => {
