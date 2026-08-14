@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { MOVE_DEFINITIONS, parseMove } from './CubeMoves';
 import Cubie, { CUBIE_SPACING } from './Cubie';
@@ -24,6 +24,7 @@ const FACE_DRAG_BASIS = {
 };
 
 const FACE_DRAG_THRESHOLD = 18;
+const SCENE_DRAG_THRESHOLD = 4;
 const INITIAL_CUBE_ROTATION = [-0.6, 1.4, 2.1];
 
 function cubieKey(position) {
@@ -195,50 +196,38 @@ function resolveDragTarget(face, position, isHorizontal) {
   const column = Math.round(point.dot(right));
   const row = Math.round(point.dot(up));
 
-  // U/D are already the full outer layer when dragged horizontally.
-  if (isHorizontal && (face === 'U' || face === 'D')) {
-    return face;
-  }
+  if (isHorizontal && (face === 'U' || face === 'D')) return face;
 
-  // For side faces, horizontal drags on the top/bottom rows act on U/D.
   if (isHorizontal) {
     if (row > 0) return 'U';
     if (row < 0) return 'D';
-    // E slice is intentionally deferred to #33 until M/E/S moves exist.
     return face;
   }
 
-  // For U/D faces, vertical drags on the front/back columns act on F/B.
   if (!isHorizontal && (face === 'U' || face === 'D')) {
     if (column > 0) return face === 'U' ? 'F' : 'B';
     if (column < 0) return face === 'U' ? 'B' : 'F';
-    // S slice is intentionally deferred to #33.
     return face;
   }
 
-  // For F/B faces, vertical drags on the left/right columns act on L/R.
   if (!isHorizontal && (face === 'F' || face === 'B')) {
     if (column > 0) return face === 'F' ? 'R' : 'L';
     if (column < 0) return face === 'F' ? 'L' : 'R';
-    // M slice is intentionally deferred to #33.
     return face;
   }
 
-  // For L/R faces, vertical drags stay on the selected outer face.
   return face;
 }
 
-function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsRef }) {
+function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, cancelRef }) {
   const dragRef = useRef(null);
 
-  const releaseControls = () => {
-    if (controlsRef.current) controlsRef.current.enabled = true;
+  const cancelDrag = () => {
+    dragRef.current = null;
   };
 
   const handleStickerPointerDown = (event, sticker) => {
     if (disabled) return;
-
-    if (controlsRef.current) controlsRef.current.enabled = false;
 
     dragRef.current = {
       pointerId: event.pointerId,
@@ -253,12 +242,14 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsR
 
   useEffect(() => {
     handlerRef.current = handleStickerPointerDown;
+    cancelRef.current = cancelDrag;
+
     return () => {
       if (handlerRef.current === handleStickerPointerDown) handlerRef.current = null;
-      dragRef.current = null;
-      releaseControls();
+      if (cancelRef.current === cancelDrag) cancelRef.current = null;
+      cancelDrag();
     };
-  }, [disabled, handlerRef, controlsRef]);
+  }, [disabled, handlerRef, cancelRef]);
 
   useEffect(() => {
     const handlePointerMove = (event) => {
@@ -300,9 +291,6 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsR
       const targetFace = resolveDragTarget(face, drag.position, isHorizontal);
       if (!targetFace) return;
 
-      // Re-evaluate direction using the target layer's own face basis. This
-      // prevents a top/bottom row drag from being interpreted as the visible
-      // front/back face rotation.
       const targetBasis = FACE_DRAG_BASIS[targetFace];
       const targetRightWorld = new THREE.Vector3(...targetBasis.right).applyQuaternion(quaternion);
       const targetUpWorld = new THREE.Vector3(...targetBasis.up).applyQuaternion(quaternion);
@@ -322,46 +310,166 @@ function FaceDragHandler({ groupRef, onFaceMove, disabled, handlerRef, controlsR
 
       drag.triggered = true;
       dragRef.current = null;
-      releaseControls();
       onFaceMove?.(`${targetFace}${effectiveDirection > 0 ? '' : "'"}`);
     };
 
     const handlePointerUp = (event) => {
-      if (dragRef.current?.pointerId === event.pointerId) {
-        dragRef.current = null;
-        releaseControls();
-      }
+      if (dragRef.current?.pointerId === event.pointerId) cancelDrag();
+    };
+
+    const handleWindowBlur = () => cancelDrag();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') cancelDrag();
+    };
+    const handleLostPointerCapture = (event) => {
+      if (dragRef.current?.pointerId === event.pointerId) cancelDrag();
     };
 
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('pointercancel', handlePointerUp);
+    window.addEventListener('blur', handleWindowBlur);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('lostpointercapture', handleLostPointerCapture);
 
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
+      window.removeEventListener('blur', handleWindowBlur);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('lostpointercapture', handleLostPointerCapture);
     };
-  }, [disabled, groupRef, onFaceMove, controlsRef]);
+  }, [disabled, groupRef, onFaceMove]);
 
   return null;
+}
+
+function arcballPoint(clientX, clientY, rect) {
+  const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  const y = 1 - ((clientY - rect.top) / rect.height) * 2;
+  const lengthSquared = x * x + y * y;
+
+  if (lengthSquared <= 1) {
+    return new THREE.Vector3(x, y, Math.sqrt(1 - lengthSquared));
+  }
+
+  const length = Math.sqrt(lengthSquared);
+  return new THREE.Vector3(x / length, y / length, 0);
+}
+
+function SceneRotationHandler({ groupRef, containerRef, disabled }) {
+  const { camera } = useThree();
+  const dragRef = useRef(null);
+  const previousPointRef = useRef(new THREE.Vector3());
+
+  const cancelDrag = () => {
+    dragRef.current = null;
+  };
+
+  const handlePointerDown = (event) => {
+    if (disabled) return;
+    if (event.intersections?.[0]?.object !== event.eventObject) return;
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect || !groupRef.current) return;
+
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      dragging: false,
+    };
+    previousPointRef.current.copy(arcballPoint(event.clientX, event.clientY, rect));
+    event.target.setPointerCapture?.(event.pointerId);
+  };
+
+  useEffect(() => {
+    const handlePointerMove = (event) => {
+      const drag = dragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId || disabled || !groupRef.current) return;
+
+      const dx = event.clientX - drag.startX;
+      const dy = event.clientY - drag.startY;
+      if (!drag.dragging && Math.hypot(dx, dy) < SCENE_DRAG_THRESHOLD) return;
+      drag.dragging = true;
+
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const currentPoint = arcballPoint(event.clientX, event.clientY, rect);
+      const previousPoint = previousPointRef.current;
+      const deltaQuaternion = new THREE.Quaternion().setFromUnitVectors(previousPoint, currentPoint);
+      const cameraQuaternion = camera.getWorldQuaternion(new THREE.Quaternion());
+      const worldDelta = cameraQuaternion.clone()
+        .multiply(deltaQuaternion)
+        .multiply(cameraQuaternion.clone().invert());
+
+      groupRef.current.quaternion.premultiply(worldDelta).normalize();
+      previousPoint.copy(currentPoint);
+    };
+
+    const handlePointerUp = (event) => {
+      if (dragRef.current?.pointerId !== event.pointerId) return;
+      dragRef.current = null;
+      event.target.releasePointerCapture?.(event.pointerId);
+    };
+
+    const handleWindowBlur = () => cancelDrag();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') cancelDrag();
+    };
+    const handleLostPointerCapture = (event) => {
+      if (dragRef.current?.pointerId === event.pointerId) cancelDrag();
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+    window.addEventListener('blur', handleWindowBlur);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('lostpointercapture', handleLostPointerCapture);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      window.removeEventListener('blur', handleWindowBlur);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('lostpointercapture', handleLostPointerCapture);
+      cancelDrag();
+    };
+  }, [camera, containerRef, disabled, groupRef]);
+
+  return (
+    <mesh position={[0, 0, -20]} onPointerDown={handlePointerDown}>
+      <planeGeometry args={[100, 100]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+  );
 }
 
 export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onAnimationComplete, onFaceMove, onPerformance, interactionDisabled = false }) {
   const cubeGroupRef = useRef();
   const faceDragHandlerRef = useRef(null);
-  const controlsRef = useRef();
+  const faceDragCancelRef = useRef(null);
+  const canvasContainerRef = useRef(null);
   const faceDragDisabled = interactionDisabled || Boolean(activeMove);
 
   return (
-    <div className="rubiks-game-canvas">
+    <div ref={canvasContainerRef} className="rubiks-game-canvas">
       <Canvas camera={{ position: [3.5, 3.1, 4.4], fov: 42 }} shadows>
         <ambientLight intensity={1.5} />
         <PerformanceSampler onPerformance={onPerformance} />
+        <SceneRotationHandler
+          groupRef={cubeGroupRef}
+          containerRef={canvasContainerRef}
+          disabled={interactionDisabled || Boolean(activeMove)}
+        />
         <FaceDragHandler
           groupRef={cubeGroupRef}
           handlerRef={faceDragHandlerRef}
-          controlsRef={controlsRef}
+          cancelRef={faceDragCancelRef}
           onFaceMove={onFaceMove}
           disabled={faceDragDisabled}
         />
@@ -374,11 +482,9 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
           groupRef={cubeGroupRef}
         />
         <OrbitControls
-          ref={controlsRef}
           enablePan={false}
+          enableRotate={false}
           enableDamping
-          dampingFactor={0.08}
-          rotateSpeed={0.7}
           zoomSpeed={0.8}
           minDistance={3.5}
           maxDistance={7}
