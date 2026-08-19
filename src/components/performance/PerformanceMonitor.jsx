@@ -10,6 +10,7 @@ export default function PerformanceMonitor({
   sampleInterval = SAMPLE_INTERVAL,
   metrics = PERFORMANCE_METRICS,
   instrumentation,
+  metricContext = {},
 }) {
   const sampleRef = useRef({
     elapsed: 0,
@@ -26,6 +27,7 @@ export default function PerformanceMonitor({
     }
 
     const context = {
+      ...metricContext,
       renderer: state.gl,
       elapsed: sample.elapsed,
       frames: sample.frames,
@@ -39,7 +41,7 @@ export default function PerformanceMonitor({
       ...collectMetrics(allMetrics, context),
     });
 
-    const measures = instrumentation?.getMeasures() || [];
+    const measures = instrumentation?.drainMeasures?.() || [];
     if (measures.length) {
       onMeasure?.(measures);
     }
