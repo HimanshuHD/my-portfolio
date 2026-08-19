@@ -98,6 +98,7 @@ export default function PerformancePanel({
   historySize = MAX_HISTORY,
 }) {
   const [history, setHistory] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (!stats) return;
@@ -108,84 +109,127 @@ export default function PerformancePanel({
     ].slice(-historySize));
   }, [historySize, stats]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   const summary = useMemo(() => getSummary(history), [history]);
 
   return (
-    <section
-      className="performance-panel"
-      aria-label="Performance diagnostics"
-    >
-      <div className="performance-panel-title">
+    <>
+      <button
+        type="button"
+        className="performance-panel-trigger"
+        aria-controls="performance-panel-drawer"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((open) => !open)}
+      >
         <span>PERFORMANCE</span>
-        <small>live · {sampleInterval}ms sample</small>
-      </div>
+      </button>
 
-      <div className="performance-panel-grid">
-        <div>
-          <strong>{stats ? Math.round(stats.fps) : '—'}</strong>
-          <span>FPS</span>
-        </div>
-        <div>
-          <strong>{formatDecimal(stats?.frameTime, ' ms')}</strong>
-          <span>Frame time</span>
-        </div>
-        <div>
-          <strong>{formatMetric(stats?.geometries)}</strong>
-          <span>Geometries</span>
-        </div>
-        <div>
-          <strong>{formatMetric(stats?.textures)}</strong>
-          <span>Textures</span>
-        </div>
-        <div>
-          <strong>{formatMetric(stats?.calls)}</strong>
-          <span>Draw calls</span>
-        </div>
-        <div>
-          <strong>
-            {stats?.jsHeap ? formatHeap(stats.jsHeap.usedMB) : '—'}
-          </strong>
-          <span>JS heap</span>
-        </div>
-      </div>
+      <div
+        className={`performance-panel-overlay${isOpen ? ' is-open' : ''}`}
+        aria-hidden={!isOpen}
+        onClick={() => setIsOpen(false)}
+      />
 
-      <div className="performance-summary">
-        <div>
-          <span>AVG FPS</span>
-          <strong>{formatDecimal(summary.averageFps)}</strong>
-        </div>
-        <div>
-          <span>MIN FPS</span>
-          <strong>{formatDecimal(summary.minFps)}</strong>
-        </div>
-        <div>
-          <span>MAX FPS</span>
-          <strong>{formatDecimal(summary.maxFps)}</strong>
-        </div>
-        <div>
-          <span>AVG FRAME</span>
-          <strong>{formatDecimal(summary.averageFrameTime, ' ms')}</strong>
-        </div>
-        <div>
-          <span>PEAK FRAME</span>
-          <strong>{formatDecimal(summary.peakFrameTime, ' ms')}</strong>
-        </div>
-      </div>
+      <aside
+        id="performance-panel-drawer"
+        className={`performance-panel-drawer${isOpen ? ' is-open' : ''}`}
+        aria-label="Performance diagnostics"
+        aria-hidden={!isOpen}
+      >
+        <div className="performance-panel">
+          <div className="performance-panel-title">
+            <span>PERFORMANCE</span>
+            <div className="performance-panel-actions">
+              <small>live · {sampleInterval}ms sample</small>
+              <button
+                type="button"
+                className="performance-panel-close"
+                onClick={() => setIsOpen(false)}
+                aria-label="Close performance panel"
+              >
+                ×
+              </button>
+            </div>
+          </div>
 
-      <div className="performance-charts">
-        <MetricChart
-          history={history}
-          metric="fps"
-          label="FPS history"
-          unit=" fps"
-        />
-        <MetricChart
-          history={history}
-          metric="geometries"
-          label="Geometry history"
-          unit=""
-        />
-      </div>
-    </section>
+          <div className="performance-panel-grid">
+            <div>
+              <strong>{stats ? Math.round(stats.fps) : '—'}</strong>
+              <span>FPS</span>
+            </div>
+            <div>
+              <strong>{formatDecimal(stats?.frameTime, ' ms')}</strong>
+              <span>Frame time</span>
+            </div>
+            <div>
+              <strong>{formatMetric(stats?.geometries)}</strong>
+              <span>Geometries</span>
+            </div>
+            <div>
+              <strong>{formatMetric(stats?.textures)}</strong>
+              <span>Textures</span>
+            </div>
+            <div>
+              <strong>{formatMetric(stats?.calls)}</strong>
+              <span>Draw calls</span>
+            </div>
+            <div>
+              <strong>
+                {stats?.jsHeap ? formatHeap(stats.jsHeap.usedMB) : '—'}
+              </strong>
+              <span>JS heap</span>
+            </div>
+          </div>
+
+          <div className="performance-summary">
+            <div>
+              <span>AVG FPS</span>
+              <strong>{formatDecimal(summary.averageFps)}</strong>
+            </div>
+            <div>
+              <span>MIN FPS</span>
+              <strong>{formatDecimal(summary.minFps)}</strong>
+            </div>
+            <div>
+              <span>MAX FPS</span>
+              <strong>{formatDecimal(summary.maxFps)}</strong>
+            </div>
+            <div>
+              <span>AVG FRAME</span>
+              <strong>{formatDecimal(summary.averageFrameTime, ' ms')}</strong>
+            </div>
+            <div>
+              <span>PEAK FRAME</span>
+              <strong>{formatDecimal(summary.peakFrameTime, ' ms')}</strong>
+            </div>
+          </div>
+
+          <div className="performance-charts">
+            <MetricChart
+              history={history}
+              metric="fps"
+              label="FPS history"
+              unit=" fps"
+            />
+            <MetricChart
+              history={history}
+              metric="geometries"
+              label="Geometry history"
+              unit=""
+            />
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }
