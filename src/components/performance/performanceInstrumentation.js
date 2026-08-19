@@ -66,6 +66,12 @@ export const createPerformanceInstrumentation = () => {
       return event;
     },
 
+    drainMeasures() {
+      const pendingMeasures = [...measures];
+      measures.length = 0;
+      return pendingMeasures;
+    },
+
     getMeasures() {
       return [...measures];
     },
