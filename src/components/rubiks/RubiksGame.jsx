@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './rubiks.css';
 import RubiksCube3D from './RubiksCube3D';
+import PerformancePanel from '../performance/PerformancePanel';
 import { createSolvedCube } from './CubeState';
 import { applyMove } from './CubeMoves';
 import { createScramble, expandAnimationMoves, scrambleToString } from './Scramble';
@@ -127,9 +128,6 @@ export default function RubiksGame({ onClose }) {
   const isAnimating = Boolean(activeMove);
   const status = solved ? 'Solved ✓' : isAnimating ? 'Animating…' : 'In progress';
 
-  const formatMetric = (value) => (Number.isFinite(value) ? Math.round(value).toLocaleString() : '—');
-  const formatMs = (value) => (Number.isFinite(value) ? `${value.toFixed(1)} MB` : '—');
-
   const modal = <div className="rubiks-modal-backdrop" role="presentation">
     <section className="rubiks-game-modal" role="dialog" aria-modal="true" aria-labelledby="rubiks-game-title">
       <button className="rubiks-close" type="button" onClick={onClose} aria-label="Close Rubik's Cube game">×</button>
@@ -138,17 +136,7 @@ export default function RubiksGame({ onClose }) {
         <div className="rubiks-cube-stage">
           <RubiksCube3D cube={cube} activeMove={activeMove} moveDuration={moveDuration} onAnimationComplete={finishAnimation} onFaceMove={handleMove} onPerformance={setPerformanceStats} interactionDisabled={isScrambling} />
           {solved && <div className="rubiks-solved-celebration" aria-live="polite"><span className="celebration-particle particle-1" /><span className="celebration-particle particle-2" /><span className="celebration-particle particle-3" /><span className="celebration-particle particle-4" /><span className="celebration-particle particle-5" /><span className="celebration-particle particle-6" /><div className="rubiks-solved-badge">SOLVED! ✦</div></div>}
-          <div className="rubiks-performance-panel" aria-label="Rubik's Cube performance diagnostics">
-            <div className="rubiks-performance-title"><span>PERFORMANCE</span><small>live · 500ms sample</small></div>
-            <div className="rubiks-performance-grid">
-              <div><strong>{performanceStats ? `${Math.round(performanceStats.fps)}` : '—'}</strong><span>FPS</span></div>
-              <div><strong>{formatMetric(performanceStats?.geometries)}</strong><span>Geometries</span></div>
-              <div><strong>{formatMetric(performanceStats?.textures)}</strong><span>Textures</span></div>
-              <div><strong>{formatMetric(performanceStats?.calls)}</strong><span>Draw calls</span></div>
-              <div><strong>{formatMetric(performanceStats?.triangles)}</strong><span>Triangles</span></div>
-              <div><strong>{performanceStats?.jsHeap ? formatMs(performanceStats.jsHeap.usedMB) : '—'}</strong><span>JS heap</span></div>
-            </div>
-          </div>
+          <PerformancePanel stats={performanceStats} />
         </div>
         <aside className="rubiks-controls"><div className="rubiks-stats"><div><strong>{moves}</strong><span>Moves</span></div><div><strong>{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</strong><span>Time</span></div></div><div className="rubiks-actions"><button type="button" className="button primary" onClick={scrambleCube} disabled={isAnimating || isScrambling}>Scramble</button><button type="button" className="button ghost" onClick={resetCube}>Reset</button></div><div className="rubiks-moves"><span>Face turns</span><div>{MOVE_BUTTONS.map((move) => <button key={move} type="button" onClick={() => handleMove(move)} disabled={isAnimating || isScrambling}>{move}</button>)}</div></div>{scramble.length > 0 && <div className="rubiks-scramble"><span>Scramble</span><p>{scrambleToString(scramble)}</p></div>}</aside>
       </div>
