@@ -6,8 +6,10 @@ const SAMPLE_INTERVAL = 0.5;
 
 export default function PerformanceMonitor({
   onSample,
+  onMeasure,
   sampleInterval = SAMPLE_INTERVAL,
   metrics = PERFORMANCE_METRICS,
+  instrumentation,
 }) {
   const sampleRef = useRef({
     elapsed: 0,
@@ -29,10 +31,18 @@ export default function PerformanceMonitor({
       frames: sample.frames,
     };
 
+    const registeredMetrics = instrumentation?.getMetrics() || [];
+    const allMetrics = [...metrics, ...registeredMetrics];
+
     onSample?.({
       timestamp: performance.now(),
-      ...collectMetrics(metrics, context),
+      ...collectMetrics(allMetrics, context),
     });
+
+    const measures = instrumentation?.getMeasures() || [];
+    if (measures.length) {
+      onMeasure?.(measures);
+    }
 
     sample.elapsed = 0;
     sample.frames = 0;
