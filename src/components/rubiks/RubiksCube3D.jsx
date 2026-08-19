@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { MOVE_DEFINITIONS, parseMove } from './CubeMoves';
 import Cubie, { CUBIE_SPACING } from './Cubie';
+import PerformanceMonitor from '../performance/PerformanceMonitor';
 
 const NORMAL_FACE = {'0,1,0':'U','1,0,0':'R','0,0,1':'F','0,-1,0':'D','-1,0,0':'L','0,0,-1':'B'};
 const FACE_DRAG_BASIS = {U:{right:[1,0,0],up:[0,0,1]},R:{right:[0,0,-1],up:[0,1,0]},F:{right:[1,0,0],up:[0,1,0]},D:{right:[1,0,0],up:[0,0,-1]},L:{right:[0,0,1],up:[0,1,0]},B:{right:[-1,0,0],up:[0,1,0]}};
@@ -89,43 +90,6 @@ function AnimatedLayer({ cubies, definition, amount, duration, onComplete, onSti
       ))}
     </group>
   );
-}
-
-function PerformanceSampler({ onPerformance }) {
-  const sampleRef = useRef({ elapsed: 0, frames: 0 });
-
-  useFrame((state, delta) => {
-    sampleRef.current.elapsed += delta;
-    sampleRef.current.frames += 1;
-
-    if (sampleRef.current.elapsed < 0.5) return;
-
-    const renderer = state.gl;
-    const info = renderer.info;
-    const fps = sampleRef.current.frames / sampleRef.current.elapsed;
-    const memory = typeof performance !== 'undefined' && performance.memory
-      ? {
-          usedMB: performance.memory.usedJSHeapSize / 1024 / 1024,
-          totalMB: performance.memory.totalJSHeapSize / 1024 / 1024,
-        }
-      : null;
-
-    onPerformance?.({
-      fps,
-      geometries: info.memory.geometries,
-      textures: info.memory.textures,
-      calls: info.render.calls,
-      triangles: info.render.triangles,
-      points: info.render.points,
-      lines: info.render.lines,
-      jsHeap: memory,
-    });
-
-    sampleRef.current.elapsed = 0;
-    sampleRef.current.frames = 0;
-  });
-
-  return null;
 }
 
 function GameCube({ cube, activeMove, moveDuration, onAnimationComplete, onStickerPointerDown, groupRef }) {
@@ -425,12 +389,7 @@ function SceneRotationHandler({ groupRef, containerRef, disabled }) {
     };
   }, [camera, containerRef, disabled, groupRef]);
 
-  return (
-    <mesh position={[0, 0, -20]} onPointerDown={handlePointerDown}>
-      <planeGeometry args={[100, 100]} />
-      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-    </mesh>
-  );
+  return null;
 }
 
 export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onAnimationComplete, onFaceMove, onPerformance, interactionDisabled = false }) {
@@ -444,7 +403,7 @@ export default function RubiksCube3D({ cube, activeMove, moveDuration = 450, onA
     <div ref={canvasContainerRef} className="rubiks-game-canvas">
       <Canvas camera={{ position: [3.5, 3.1, 4.4], fov: 42 }} shadows>
         <ambientLight intensity={1.5} />
-        <PerformanceSampler onPerformance={onPerformance} />
+        <PerformanceMonitor onSample={onPerformance} />
         <SceneRotationHandler
           groupRef={cubeGroupRef}
           containerRef={canvasContainerRef}
