@@ -1,0 +1,159 @@
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import './rubiks.css';
+import RubiksCube3D from './RubiksCube3D';
+import { createSolvedCube } from './CubeState';
+import { applyMove } from './CubeMoves';
+import { createScramble, expandAnimationMoves, scrambleToString } from './Scramble';
+import { isSolved } from './SolvedState';
+
+const MOVE_BUTTONS = ['U', "U'", 'U2', 'R', "R'", 'R2', 'F', "F'", 'F2', 'D', "D'", 'D2', 'L', "L'", 'L2', 'B', "B'", 'B2'];
+const ROTATION_DURATION = 480;
+
+export default function RubiksGame({ onClose }) {
+  const [cube, setCube] = useState(createSolvedCube);
+  const [moves, setMoves] = useState(0);
+  const [scramble, setScramble] = useState([]);
+  const [startedAt, setStartedAt] = useState(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [activeMove, setActiveMove] = useState(null);
+  const [moveDuration, setMoveDuration] = useState(ROTATION_DURATION);
+  const [performanceStats, setPerformanceStats] = useState(null);
+  const [isScrambling, setIsScrambling] = useState(false);
+  const cubeRef = useRef(cube);
+  const animationIdRef = useRef(0);
+  const queueRef = useRef([]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+
+    return () => {
+      animationIdRef.current += 1;
+      queueRef.current = [];
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!startedAt || isSolved(cube)) return undefined;
+
+    const timer = window.setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    }, 250);
+
+    return () => window.clearInterval(timer);
+  }, [startedAt, isSolved(cube)]);
+
+  const startSequence = (sequence, baseCube, duration = ROTATION_DURATION, countMoves = false) => {
+    if (!sequence.length || activeMove) return false;
+
+    const sequenceId = animationIdRef.current + 1;
+    animationIdRef.current = sequenceId;
+    cubeRef.current = baseCube;
+    queueRef.current = sequence.slice(1).map((move) => ({ move, countMoves }));
+    setMoveDuration(duration);
+    setActiveMove({ move: sequence[0], id: sequenceId, countMoves });
+    return true;
+  };
+
+  const finishAnimation = (animationId) => {
+    if (!activeMove || animationId !== activeMove.id) return;
+
+    const nextCube = applyMove(cubeRef.current, activeMove.move);
+    cubeRef.current = nextCube;
+    setCube(nextCube);
+    if (activeMove.countMoves) setMoves((count) => count + 1);
+
+    const next = queueRef.current.shift();
+    if (next) {
+      const nextId = animationIdRef.current + 1;
+      animationIdRef.current = nextId;
+      setActiveMove({ move: next.move, id: nextId, countMoves: next.countMoves });
+    } else {
+      setActiveMove(null);
+      if (!activeMove.countMoves) setIsScrambling(false);
+    }
+  };
+
+  const scrambleCube = () => {
+    if (activeMove || isScrambling) return;
+
+    const sequence = createScramble();
+    const animationSequence = expandAnimationMoves(sequence);
+    const solvedCube = createSolvedCube();
+
+    animationIdRef.current += 1;
+    queueRef.current = [];
+    cubeRef.current = solvedCube;
+    setActiveMove(null);
+    setCube(solvedCube);
+    setScramble(sequence);
+    setMoves(0);
+    setElapsed(0);
+    setStartedAt(null);
+    setIsScrambling(true);
+
+    startSequence(animationSequence, solvedCube, ROTATION_DURATION, false);
+  };
+
+  const resetCube = () => {
+    animationIdRef.current += 1;
+    queueRef.current = [];
+    const solvedCube = createSolvedCube();
+    cubeRef.current = solvedCube;
+    setActiveMove(null);
+    setCube(solvedCube);
+    setScramble([]);
+    setMoves(0);
+    setElapsed(0);
+    setStartedAt(null);
+    setIsScrambling(false);
+  };
+
+  const handleMove = (move) => {
+    if (activeMove || isScrambling || (isSolved(cube) && !startedAt)) return;
+    const animationSequence = expandAnimationMoves([move]);
+    const started = startSequence(animationSequence, cubeRef.current, ROTATION_DURATION, true);
+    if (started && !startedAt) setStartedAt(Date.now());
+  };
+
+  const solved = isSolved(cube) && scramble.length > 0;
+  const isAnimating = Boolean(activeMove);
+  const status = solved ? 'Solved ✓' : isAnimating ? 'Animating…' : 'In progress';
+
+  const formatMetric = (value) => (Number.isFinite(value) ? Math.round(value).toLocaleString() : '—');
+  const formatMs = (value) => (Number.isFinite(value) ? `${value.toFixed(1)} MB` : '—');
+
+  const modal = <div className="rubiks-modal-backdrop" role="presentation">
+    <section className="rubiks-game-modal" role="dialog" aria-modal="true" aria-labelledby="rubiks-game-title">
+      <button className="rubiks-close" type="button" onClick={onClose} aria-label="Close Rubik's Cube game">×</button>
+      <div className="rubiks-game-header"><div><span className="rubiks-kicker">INTERACTIVE MINI GAME</span><h2 id="rubiks-game-title">Solve the Rubik's Cube</h2><p>Scramble it, rotate the faces, and solve it in as few moves as possible.</p></div><div className="rubiks-status">{status}</div></div>
+      <div className="rubiks-game-layout">
+        <div className="rubiks-cube-stage">
+          <RubiksCube3D cube={cube} activeMove={activeMove} moveDuration={moveDuration} onAnimationComplete={finishAnimation} onFaceMove={handleMove} onPerformance={setPerformanceStats} interactionDisabled={isScrambling} />
+          {solved && <div className="rubiks-solved-celebration" aria-live="polite"><span className="celebration-particle particle-1" /><span className="celebration-particle particle-2" /><span className="celebration-particle particle-3" /><span className="celebration-particle particle-4" /><span className="celebration-particle particle-5" /><span className="celebration-particle particle-6" /><div className="rubiks-solved-badge">SOLVED! ✦</div></div>}
+          <div className="rubiks-performance-panel" aria-label="Rubik's Cube performance diagnostics">
+            <div className="rubiks-performance-title"><span>PERFORMANCE</span><small>live · 500ms sample</small></div>
+            <div className="rubiks-performance-grid">
+              <div><strong>{performanceStats ? `${Math.round(performanceStats.fps)}` : '—'}</strong><span>FPS</span></div>
+              <div><strong>{formatMetric(performanceStats?.geometries)}</strong><span>Geometries</span></div>
+              <div><strong>{formatMetric(performanceStats?.textures)}</strong><span>Textures</span></div>
+              <div><strong>{formatMetric(performanceStats?.calls)}</strong><span>Draw calls</span></div>
+              <div><strong>{formatMetric(performanceStats?.triangles)}</strong><span>Triangles</span></div>
+              <div><strong>{performanceStats?.jsHeap ? formatMs(performanceStats.jsHeap.usedMB) : '—'}</strong><span>JS heap</span></div>
+            </div>
+          </div>
+        </div>
+        <aside className="rubiks-controls"><div className="rubiks-stats"><div><strong>{moves}</strong><span>Moves</span></div><div><strong>{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</strong><span>Time</span></div></div><div className="rubiks-actions"><button type="button" className="button primary" onClick={scrambleCube} disabled={isAnimating || isScrambling}>Scramble</button><button type="button" className="button ghost" onClick={resetCube}>Reset</button></div><div className="rubiks-moves"><span>Face turns</span><div>{MOVE_BUTTONS.map((move) => <button key={move} type="button" onClick={() => handleMove(move)} disabled={isAnimating || isScrambling}>{move}</button>)}</div></div>{scramble.length > 0 && <div className="rubiks-scramble"><span>Scramble</span><p>{scrambleToString(scramble)}</p></div>}</aside>
+      </div>
+    </section>
+  </div>;
+
+  return createPortal(modal, document.body);
+}
