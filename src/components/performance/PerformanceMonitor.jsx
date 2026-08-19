@@ -1,4 +1,4 @@
-import { useContext, useRef } from 'react';
+import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { collectMetrics, PERFORMANCE_METRICS } from './performanceMetrics';
 import { usePerformanceInstrumentation } from './PerformanceInstrumentationContext';
