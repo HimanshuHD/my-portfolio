@@ -4,7 +4,9 @@ import { useFrame } from '@react-three/fiber';
 const SAMPLE_INTERVAL = 0.5;
 
 function readJsHeap() {
-  if (typeof performance === 'undefined' || !performance.memory) return null;
+  if (typeof performance === 'undefined' || !performance.memory) {
+    return null;
+  }
 
   return {
     usedMB: performance.memory.usedJSHeapSize / 1024 / 1024,
@@ -12,15 +14,23 @@ function readJsHeap() {
   };
 }
 
-export default function PerformanceMonitor({ onSample, sampleInterval = SAMPLE_INTERVAL }) {
-  const sampleRef = useRef({ elapsed: 0, frames: 0 });
+export default function PerformanceMonitor({
+  onSample,
+  sampleInterval = SAMPLE_INTERVAL,
+}) {
+  const sampleRef = useRef({
+    elapsed: 0,
+    frames: 0,
+  });
 
   useFrame((state, delta) => {
     const sample = sampleRef.current;
     sample.elapsed += delta;
     sample.frames += 1;
 
-    if (sample.elapsed < sampleInterval) return;
+    if (sample.elapsed < sampleInterval) {
+      return;
+    }
 
     const renderer = state.gl;
     const info = renderer.info;
