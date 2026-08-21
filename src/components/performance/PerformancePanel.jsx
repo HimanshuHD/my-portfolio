@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './performance.css';
-
-const MAX_HISTORY = 40;
+import {
+  createPerformanceHistory,
+  DEFAULT_HISTORY_SIZE,
+} from './PerformanceHistory';
 
 const formatMetric = (value) => (
   Number.isFinite(value) ? Math.round(value).toLocaleString() : '—'
@@ -14,35 +16,6 @@ const formatDecimal = (value, suffix = '') => (
 const formatHeap = (value) => (
   Number.isFinite(value) ? `${value.toFixed(1)} MB` : '—'
 );
-
-const getSummary = (history) => {
-  if (!history.length) {
-    return {
-      averageFps: null,
-      minFps: null,
-      maxFps: null,
-      averageFrameTime: null,
-      peakFrameTime: null,
-    };
-  }
-
-  const fpsValues = history.map((sample) => sample.fps).filter(Number.isFinite);
-  const frameTimeValues = history
-    .map((sample) => sample.frameTime)
-    .filter(Number.isFinite);
-
-  return {
-    averageFps: fpsValues.length
-      ? fpsValues.reduce((total, value) => total + value, 0) / fpsValues.length
-      : null,
-    minFps: fpsValues.length ? Math.min(...fpsValues) : null,
-    maxFps: fpsValues.length ? Math.max(...fpsValues) : null,
-    averageFrameTime: frameTimeValues.length
-      ? frameTimeValues.reduce((total, value) => total + value, 0) / frameTimeValues.length
-      : null,
-    peakFrameTime: frameTimeValues.length ? Math.max(...frameTimeValues) : null,
-  };
-};
 
 const buildPath = (history, metric, width, height, min, max) => {
   if (!history.length) return '';
@@ -95,20 +68,35 @@ function MetricChart({ history, metric, label, unit }) {
 export default function PerformancePanel({
   stats,
   sampleInterval = 500,
-  historySize = MAX_HISTORY,
+  historySize = DEFAULT_HISTORY_SIZE,
 }) {
-  const [history, setHistory] = useState([]);
+  const historyRef = useRef(null);
+  const [historyVersion, setHistoryVersion] = useState(0);
+
+  if (!historyRef.current || historyRef.current.limit !== historySize) {
+    historyRef.current = {
+      limit: historySize,
+      history: createPerformanceHistory(historySize),
+    };
+  }
 
   useEffect(() => {
     if (!stats) return;
 
-    setHistory((currentHistory) => [
-      ...currentHistory,
-      stats,
-    ].slice(-historySize));
-  }, [historySize, stats]);
+    historyRef.current.history.add(stats);
+    setHistoryVersion((version) => version + 1);
+  }, [stats]);
 
-  const summary = useMemo(() => getSummary(history), [history]);
+  const history = historyRef.current.history;
+  const samples = history.getSamples();
+
+  const summary = useMemo(() => ({
+    averageFps: history.getAverage('fps'),
+    minFps: history.getMin('fps'),
+    maxFps: history.getMax('fps'),
+    averageFrameTime: history.getAverage('frameTime'),
+    peakFrameTime: history.getMax('frameTime'),
+  }), [history, historyVersion]);
 
   return (
     <section
@@ -174,13 +162,13 @@ export default function PerformancePanel({
 
       <div className="performance-charts">
         <MetricChart
-          history={history}
+          history={samples}
           metric="fps"
           label="FPS history"
           unit=" fps"
         />
         <MetricChart
-          history={history}
+          history={samples}
           metric="geometries"
           label="Geometry history"
           unit=""
