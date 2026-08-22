@@ -9,6 +9,28 @@ export function createPerformanceHistory(maxSamples = DEFAULT_HISTORY_SIZE) {
 
   const getLimit = () => Math.max(1, Math.floor(maxSamples));
 
+  const getSummary = (metric) => {
+    const values = getNumericValues(samples, metric);
+
+    if (!values.length) {
+      return {
+        average: null,
+        min: null,
+        max: null,
+        latest: null,
+        count: 0,
+      };
+    }
+
+    return {
+      average: values.reduce((total, value) => total + value, 0) / values.length,
+      min: Math.min(...values),
+      max: Math.max(...values),
+      latest: values[values.length - 1],
+      count: values.length,
+    };
+  };
+
   return {
     add(sample) {
       if (!sample || typeof sample !== 'object') {
@@ -35,24 +57,20 @@ export function createPerformanceHistory(maxSamples = DEFAULT_HISTORY_SIZE) {
       return getNumericValues(samples, metric);
     },
 
+    getSummary(metric) {
+      return getSummary(metric);
+    },
+
     getAverage(metric) {
-      const values = getNumericValues(samples, metric);
-
-      if (!values.length) {
-        return null;
-      }
-
-      return values.reduce((total, value) => total + value, 0) / values.length;
+      return getSummary(metric).average;
     },
 
     getMin(metric) {
-      const values = getNumericValues(samples, metric);
-      return values.length ? Math.min(...values) : null;
+      return getSummary(metric).min;
     },
 
     getMax(metric) {
-      const values = getNumericValues(samples, metric);
-      return values.length ? Math.max(...values) : null;
+      return getSummary(metric).max;
     },
 
     clear() {
